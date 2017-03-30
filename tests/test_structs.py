@@ -17,8 +17,7 @@
 #*******************************************************************************
 
 
-from batteries_bakup.structs import  PoD, PoDGroup, NA, Absent, NaN
-from batteries_bakup.stats import Sum, N, Avg
+from ..structs import  PoD, PoDGroup, NA, Absent, NaN, Sum, N, Avg
 
 
 def TestPoDAsColumn():
@@ -83,68 +82,68 @@ def another_test():
     (t.size * t.price) >> Avg == 40
 
 
-def test_PoDGroup():
-    assert PoDGroup([NA, 1]) >> Sum == 1
-
-    assert (1 + PoDGroup([1, 2]) + 1)._values == [3, 4]  # Single + Group
-    assert (PoDGroup([1, 2]) + PoDGroup([1, 2]))._values == [2, 4]  # Group + Group
-    assert (Absent + PoDGroup([1, 2]) + Absent)._values == [Absent, Absent]  # Absent (Single) + Group
-    assert (1 + PoDGroup([1, Absent]) + 1)._values == [3, Absent]  # Group with Absent + Single
-
-    assert (0 * PoDGroup([1, 2]) * 1)._values == [0, 0]  # Single + Group
-    assert (PoDGroup([1, 2]) * PoDGroup([1, 2]))._values == [1, 4]  # Group + Group
-
-    a = PoD()
-    a.asset = 'Gold'
-    a.size = 10
-    a.entry = 5
-    a.client = 'a'
-
-    b = PoD()
-    b.asset = 'Silver'
-    b.size = -5
-    b.entry = 8
-    b.client = 'a'
-
-    markPx = 6
-    g1 = PoDGroup([e for e in [a, b] if e.size != 0])
-    g2 = PoDGroup()
-
-    assert len(g1) == 2
-    assert len(g2) == 0
-
-    c = PoD()
-    c.asset = 'Rock'
-    c.size = -5
-    c.entry = 8
-    c.client = 'b'
-
-    d = PoD()
-    d.asset = 'Paper'
-    d.size = -5
-    d.entry = Absent
-    d.client = 'b'
-
-    g3 = PoDGroup([a, b, c, d])
-    gg1 = g3.GroupBy.client
-    assert len(gg1) == 1
-    assert gg1.GroupedBy == 'client'
-    assert len(gg1.a) == 2
-
-    gg2 = g3.GroupBy('asset', ('Gold', 'Silver', 'LiveCattle'))
-    assert len(gg2) == 3
-    assert len(gg2.LiveCattle) == 0
-    actual_result = []
-    for key, subgroup in gg2.GroupItems:
-        assert subgroup == gg2[key]
-        actual_result.append([key, len(subgroup), (subgroup.size * subgroup.price) >> Sum])
-    expected_result = [
-        ['Gold', 1, 50],
-        ['Silver', 1, -40],
-        ['LiveCattle', 0, NA],
-        #[AllOthers, 2, Absent]
-    ]
-    assert actual_result == expected_result
+# def test_PoDGroup():
+#     assert PoDGroup([NA, 1]) >> Sum == 1
+#
+#     assert (1 + PoDGroup([1, 2]) + 1)._values == [3, 4]  # Single + Group
+#     assert (PoDGroup([1, 2]) + PoDGroup([1, 2]))._values == [2, 4]  # Group + Group
+#     assert (Absent + PoDGroup([1, 2]) + Absent)._values == [Absent, Absent]  # Absent (Single) + Group
+#     assert (1 + PoDGroup([1, Absent]) + 1)._values == [3, Absent]  # Group with Absent + Single
+#
+#     assert (0 * PoDGroup([1, 2]) * 1)._values == [0, 0]  # Single + Group
+#     assert (PoDGroup([1, 2]) * PoDGroup([1, 2]))._values == [1, 4]  # Group + Group
+#
+#     a = PoD()
+#     a.asset = 'Gold'
+#     a.size = 10
+#     a.entry = 5
+#     a.client = 'a'
+#
+#     b = PoD()
+#     b.asset = 'Silver'
+#     b.size = -5
+#     b.entry = 8
+#     b.client = 'a'
+#
+#     markPx = 6
+#     g1 = PoDGroup([e for e in [a, b] if e.size != 0])
+#     g2 = PoDGroup()
+#
+#     assert len(g1) == 2
+#     assert len(g2) == 0
+#
+#     c = PoD()
+#     c.asset = 'Rock'
+#     c.size = -5
+#     c.entry = 8
+#     c.client = 'b'
+#
+#     d = PoD()
+#     d.asset = 'Paper'
+#     d.size = -5
+#     d.entry = Absent
+#     d.client = 'b'
+#
+#     g3 = PoDGroup([a, b, c, d])
+#     gg1 = g3.GroupBy.client
+#     assert len(gg1) == 1
+#     assert gg1.GroupedBy == 'client'
+#     assert len(gg1.a) == 2
+#
+#     gg2 = g3.GroupBy('asset', ('Gold', 'Silver', 'LiveCattle'))
+#     assert len(gg2) == 3
+#     assert len(gg2.LiveCattle) == 0
+#     actual_result = []
+#     for key, subgroup in gg2.GroupItems:
+#         assert subgroup == gg2[key]
+#         actual_result.append([key, len(subgroup), (subgroup.size * subgroup.price) >> Sum])
+#     expected_result = [
+#         ['Gold', 1, 50],
+#         ['Silver', 1, -40],
+#         ['LiveCattle', 0, NA],
+#         #[AllOthers, 2, Absent]
+#     ]
+#     assert actual_result == expected_result
 
 
 def test_PoD():
@@ -157,7 +156,7 @@ def test_PoD():
     assert str(a) == 'PoD( a=1 )'
     assert repr(a) == 'PoD( a=1 )'
     assert dir(a) == ['a']
-    assert list([_ for _ in a]) == [1]
+    assert list([_ for _ in a]) == [1]      # see note in Pod.__iter__
     a = PoD(PoDType='A')
     a.a = 1
     a.b = 1
@@ -165,7 +164,7 @@ def test_PoD():
     assert str(a) == 'A( a=1, b=1 )'
     assert repr(a) == 'A( a=1, b=1 )'
     assert dir(a) == ['a', 'b']
-    assert list([_ for _ in a]) == [1, 1]
+    assert list([_ for _ in a]) == [1, 1]    #see note in Pod.__iter__
     a.Add('2')
     assert str(a) == 'A( a=1, b=1, 0=2 )'
     a.longStuff = 'fred'
@@ -187,11 +186,14 @@ def test_Singles():
     assert (-NA) is NA
 
 
-test_PoD()
-test_Singles()
-another_test()
-TestPoDAsColumn()
-#test_PoDGroup()  # not implemented yet
+def main():
+    test_PoD()
+    test_Singles()
+    another_test()
+    TestPoDAsColumn()
+    print('pass')
 
 
-print("pass")
+if __name__ == '__main__':
+    main()
+

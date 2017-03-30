@@ -20,9 +20,89 @@
 # python imports
 from collections import OrderedDict
 
-__all__ = ['NaN', 'PoD', 'PoDGroup', 'NA', 'Absent']
+# 3rd party imports
+import numpy as np
+
+# local imports
+from .pipeable import Pipeable
+
+
+__all__ = ['NaN', 'PoD', 'PoDGroup', 'NA', 'Absent', 'Sum', 'SumIgnoreAbsent', 'Avg', 'N']
 
 NaN = float('nan')
+
+
+@Pipeable
+def Sum(summable):
+    if isinstance(summable, PoD):
+        return _Sum(list(summable))
+    elif isinstance(summable, PoDGroup):
+        return _Sum(summable._values)
+    else:
+        return np.sum(summable)
+
+@Pipeable
+def SumIgnoreAbsent(summable):
+    if isinstance(summable, PoD):
+        return _Sum(list(summable), True)
+    elif isinstance(summable, PoDGroup):
+        return _Sum(summable._values, True)
+    else:
+        return _Sum(summable, True)
+
+def _Sum(values, ignoreAbsent=False):
+    answer = NA
+    if ignoreAbsent:
+        for v in values:
+            if v is not Absent:
+                if answer is NA:
+                    answer = v
+                else:
+                    answer += v
+    else:
+        for v in values:
+            if answer is NA:
+                answer = v
+            else:
+                answer += v
+    return NA if answer is NA else 1.0 * answer
+
+
+@Pipeable
+def N(countable):
+    if isinstance(countable, PoD):
+        return _N(list(countable))
+    elif isinstance(countable, PoDGroup):
+        return _N(countable._values)
+    else:
+        return len(countable)
+
+def _N(values, ignoreAbsent=False):
+    answer = NA
+    if ignoreAbsent:
+        for v in values:
+            if v is not Absent:
+                if answer is NA:
+                    if v is not NA:
+                        answer = 1
+                else:
+                    if v is not NA:
+                        answer += 1
+    else:
+        for v in values:
+            if answer is NA:
+                if v is not NA:
+                    answer = 1
+            else:
+                if v is not NA:
+                    answer += 1
+    return answer
+
+
+@Pipeable
+def Avg(numberSequence):
+    return Sum(numberSequence) / N(numberSequence)
+
 
 
 class PoD(object):
@@ -30,12 +110,13 @@ class PoD(object):
 
     def __init__(self, *args, **kwargs):
         '''
-        args must be a sequence of k, v pairs
+        args are either sequence<pair<k, v>> or [PoD]
+        could also allow pair<sequence<k>, sequence<v>> but for moment insist on PoD(*zip(ks, vs))
         kwargs may
             contain 'suppressRepr' which is a list of keys to suppress in the __repr__
             contain 'PoDType' which is it's display type
             be key value pairs - which has the side effect of being randomly ordered
-                which can mess with the element wise arithmetic operators
+                which can mess with the element wise arithmetic operators but allows PoD(name='Fred', age=10)
         '''
         _dict = OrderedDict()
         object.__setattr__(self, '_dict', _dict)
@@ -43,8 +124,12 @@ class PoD(object):
         if _type:
             _dict['_type'] = _type
         _dict['_suppressRepr'] = kwargs.pop('suppressRepr', [])
-        for k, v in args:
-            _dict[k] = v
+        if len(args) == 1 and isinstance(args[0], PoD):
+            for k, v in args[0]._dict.items():
+                _dict[k] = v
+        else:
+            for k, v in args:
+                _dict[k] = v
         for k, v in kwargs.items():
             _dict[k] = v
             _dict['_unordered'] = True
@@ -124,6 +209,14 @@ class PoD(object):
         return self.__str__()
 
     def __iter__(self):
+        # this allows PoD to feel like a list, i.e. grow a complex PoD without requiring a different type (e.g. PodGroup), e.g.
+        # family = PoD()
+        # family['people', PoD].Add(fred)
+        # family.people.Add(joe)
+        # for person in family.people:
+        #     PP << person.name
+        # we could easily insist on family['people', PoDGroup].Add(fred) or family.people = PodGroup()
+        # but it feels like it breaks the flow of thought
         values = []
         for k, v in object.__getattribute__(self, '_dict').items():
             if isinstance(k, str) and k[:1] == '_':
@@ -131,7 +224,8 @@ class PoD(object):
             values.append(v)
         return values.__iter__()
 
-    def _KvIter(self):
+    def KvIter(self):
+        # this allows us to access the name value pairs of the PoD
         kvs = []
         _dict = object.__getattribute__(self, '_dict').items()
         for k, v in object.__getattribute__(self, '_dict').items():
@@ -144,78 +238,82 @@ class PoD(object):
         return [k for k in object.__getattribute__(self, '_dict').keys() if not isinstance(k, str) or k[:1] != '_']
 
     def __add__(self, other):
+        # self + other
         _dict = object.__getattribute__(self, '_dict')
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self._KvIter(), other._KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv + ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self._KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KvIter(), other._values):
                 answer[sk] = sv + ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self._KvIter(), other):
+            for (sk, sv), ov in zip(self.KvIter(), other):
                 answer[sk] = sv + ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self._KvIter():
+            for sk, sv in self.KvIter():
                 answer[sk] = sv + other
             return answer
         else:
             return NotImplemented
 
     def __radd__(self, other):
+        # other + self
         return self.__add__(other)
 
     def __sub__(self, other):
+        # self - other
         _dict = object.__getattribute__(self, '_dict')
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self._KvIter(), other._KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv - ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self._KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KvIter(), other._values):
                 answer[sk] = sv - ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self._KvIter(), other):
+            for (sk, sv), ov in zip(self.KvIter(), other):
                 answer[sk] = sv - ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self._KvIter():
+            for sk, sv in self.KvIter():
                 answer[sk] = sv - other
             return answer
         else:
             return NotImplemented
 
     def __rsub__(self, other):
+        # other - self
         _dict = object.__getattribute__(self, '_dict')
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self._KvIter(), other._KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = ov - sv
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self._KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KvIter(), other._values):
                 answer[sk] = ov - sv
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self._KvIter(), other):
+            for (sk, sv), ov in zip(self.KvIter(), other):
                 answer[sk] = ov - sv
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self._KvIter():
+            for sk, sv in self.KvIter():
                 answer[sk] = other - sv
             return answer
         else:
@@ -227,21 +325,21 @@ class PoD(object):
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self._KvIter(), other._KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv * ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self._KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KvIter(), other._values):
                 answer[sk] = sv * ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self._KvIter(), other):
+            for (sk, sv), ov in zip(self.KvIter(), other):
                 answer[sk] = sv * ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self._KvIter():
+            for sk, sv in self.KvIter():
                 answer[sk] = sv * other
             return answer
         else:
@@ -251,58 +349,68 @@ class PoD(object):
         # other * self
         return self.__mul__(other)
 
+    def __div__(self, other):
+        # self / other
+        #P2
+        return self.__truediv__(other)
+
+    def __rdiv__(self, other):
+        # other / self
+        # P2
+        return self.__rtruediv__(other)
+
     def __truediv__(self, other):
+        # self / other
         _dict = object.__getattribute__(self, '_dict')
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self._KvIter(), other._KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv / ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self._KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KvIter(), other._values):
                 answer[sk] = sv / ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self._KvIter(), other):
+            for (sk, sv), ov in zip(self.KvIter(), other):
                 answer[sk] = sv / ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self._KvIter():
+            for sk, sv in self.KvIter():
                 answer[sk] = sv / other
             return answer
         else:
             return NotImplemented
 
     def __rtruediv__(self, other):
+        # other / self
         _dict = object.__getattribute__(self, '_dict')
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self._KvIter(), other._KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = ov / sv
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self._KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KvIter(), other._values):
                 answer[sk] = ov / sv
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self._KvIter(), other):
+            for (sk, sv), ov in zip(self.KvIter(), other):
                 answer[sk] = ov / sv
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self._KvIter():
+            for sk, sv in self.KvIter():
                 answer[sk] = other / sv
             return answer
         else:
             return NotImplemented
 
-    def KvIter(self):
-        return self._KvIter()
 
 
 class PoDGroup(object):
@@ -333,6 +441,7 @@ class PoDGroup(object):
     # element wise operations
 
     def __add__(self, other):
+        # self + other
         if isinstance(other, PoD):
             return NotImplemented
         if isinstance(other, PoDGroup):
@@ -344,9 +453,11 @@ class PoDGroup(object):
         return PoDGroup([s + other for s in self._values])
 
     def __radd__(self, other):
+        # other + self
         return self.__add__(other)
 
     def __sub__(self, other):
+        # self - other
         if isinstance(other, PoD):
             return NotImplemented
         if isinstance(other, PoDGroup):
@@ -358,6 +469,7 @@ class PoDGroup(object):
         return PoDGroup([s - other for s in self._values])
 
     def __rsub__(self, other):
+        # other - self
         if isinstance(other, PoD):
             return NotImplemented
         if isinstance(other, PoDGroup):
@@ -369,6 +481,7 @@ class PoDGroup(object):
         return PoDGroup([other - s for s in self._values])
 
     def __mul__(self, other):
+        # self * other
         if isinstance(other, PoD):
             return NotImplemented
         if isinstance(other, PoDGroup):
@@ -380,7 +493,18 @@ class PoDGroup(object):
         return PoDGroup([s * other for s in self._values])
 
     def __rmul__(self, other):
+        # other * self
         return self.__mul__(other)
+
+    def __div__(self, other):
+        # self / other
+        #P2
+        return self.__truediv__(other)
+
+    def __rdiv__(self, other):
+        # other / self
+        # P2
+        return self.__rtruediv__(other)
 
     def __truediv__(self, other):
         # self / other
@@ -412,41 +536,57 @@ class PoDGroup(object):
 
 class _AbsentClass(type):
     def __add__(cls, other):
+        # cls + other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
 
     def __radd__(cls, other):
+        # other + cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
 
     def __sub__(cls, other):
+        # cls - other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
 
     def __rsub__(cls, other):
+        # other - cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
 
     def __mul__(cls, other):
+        # cls * other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
 
     def __rmul__(cls, other):
+        # other * cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
 
     def __div__(cls, other):
+        # cls / other for P2
+        return cls.__truediv__(other)
+
+    def __rdiv__(cls, other):
+        # other / cls for P2
+        return cls.__rtruediv__(other)
+
+    def __truediv__(cls, other):
+        # cls / other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
 
-    def __rdiv__(cls, other):
+    def __rtruediv__(cls, other):
+        # other / cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         return Absent
@@ -461,61 +601,69 @@ class _AbsentClass(type):
         return Absent
 
 
+
+# # P2
+# class Absent(object):
+#     __metaclass__ = _AbsentClass
+
+# P3
 class Absent(object, metaclass=_AbsentClass):
     pass
 
 
 class _NAClass(type):
     def __add__(cls, other):
+        # cls + other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return other
 
     def __radd__(cls, other):
+        # other + cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         return other
 
     def __sub__(cls, other):
+        # cls - other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return -1.0 * other
 
     def __rsub__(cls, other):
+        # other - cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         return other
 
     def __mul__(cls, other):
+        # cls * other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return NA
 
     def __rmul__(cls, other):
+        # other * cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         return NA
 
     def __div__(cls, other):
-        if isinstance(other, PoDGroup):
-            return NotImplemented
-        return NA
+        # cls / other for P2
+        return cls.__truediv__(other)
 
     def __rdiv__(cls, other):
-        if isinstance(other, PoDGroup):
-            return NotImplemented
-        elif other is NA:
-            # NA / NA = NA
-            return NA
-        else:
-            return NaN
+        # other / cls for P2
+        return cls.__rtruediv__(other)
 
     def __truediv__(cls, other):
+        # cls / other
         if isinstance(other, PoDGroup):
             return NotImplemented
         return NA
 
     def __rtruediv__(cls, other):
+        # other / cls
         if isinstance(other, PoDGroup):
             return NotImplemented
         elif other is NA:
@@ -539,7 +687,11 @@ class _NAClass(type):
     def __call__(cls):
         return NA
 
+# # P2
+# class NA(object):
+#     __metaclass__ = _NAClass
 
+# P3
 class NA(object, metaclass=_NAClass):
     pass
 

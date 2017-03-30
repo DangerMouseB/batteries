@@ -17,7 +17,8 @@
 #*******************************************************************************
 
 
-from batteries_bakup.pipeable import Pipeable
+from ..pipeable import Pipeable, Each, EachChained
+from ..pmf_tools import Sequence
 
 
 def test_Pipeable():
@@ -33,5 +34,21 @@ def test_Pipeable():
     assert 11 >> Joe(b=12) == (11, 12)
     assert Joe(b=14) >> 13 == (13, 14)
 
+    @Pipeable
+    def Update(a, b):
+        return a + b
 
-test_Pipeable()
+    assert Sequence(1, 3) >> Each >> Update(b=1) == Sequence(2, 4)
+
+    prior = 0
+    likelihoods = Sequence(1, 3)
+    assert likelihoods >> EachChained(prior) >> Update == 6
+
+
+def main():
+    test_Pipeable()
+    print('pass')
+
+
+if __name__ == '__main__':
+    main()

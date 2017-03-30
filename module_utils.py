@@ -19,7 +19,7 @@
 
 import sys
 
-def printModules(root=''):
+def PrintModules(root=''):
     noneNames = []
     moduleNames = []
     for k, v in sys.modules.items():
@@ -31,22 +31,23 @@ def printModules(root=''):
     noneNames.sort()
     moduleNames.sort()
     print("****************** NONE ******************")
-    for mn in noneNames:
-        print(mn)
+    for name in noneNames:
+        print(name)
     print("****************** MODULES ******************")
-    for mn in moduleNames:
-        print(mn)
+    for name in moduleNames:
+        print(name)
 
-def unloadIf(module_name, condition=True, leaveRelativeImportsOptimisation=False):
+
+def Unload(module_name, leave_relative_imports_optimisation=False):
     # for description of relative imports optimisation in earlier versions of python see:
     # http://www.python.org/dev/peps/pep-0328/#relative-imports-and-indirection-entries-in-sys-modules
 
-    if condition:
-        l = len(module_name)
-        for name in sys.modules.keys():
-            if name[:l] == module_name:
-                if leaveRelativeImportsOptimisation:
-                    if sys.modules[name] is not None:
-                        del sys.modules[name]
-                else:
+    l = len(module_name)
+    module_names = list(sys.modules.keys())
+    for name in module_names:
+        if name[:l] == module_name:
+            if leave_relative_imports_optimisation:
+                if sys.modules[name] is not None:
                     del sys.modules[name]
+            else:
+                del sys.modules[name]

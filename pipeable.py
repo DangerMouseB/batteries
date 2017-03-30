@@ -25,7 +25,7 @@ import types, inspect
 from . import Missing
 
 
-__all__ = ['Pipeable', 'MoreArgsRequiredException']
+__all__ = ['Pipeable', 'MoreArgsRequiredException', 'EachChained', 'Each']
 
 # if we want to parameterise a function not in a left to right manner then we must specify those arguments as kwargs
 # the >> (rshift) operator adds an argument to the list - when enough arguments are present then the actual function
@@ -37,10 +37,16 @@ __all__ = ['Pipeable', 'MoreArgsRequiredException']
 def Pipeable(*args, **kwargs):
     if len(args) == 1 and isinstance(args[0], (types.FunctionType, types.MethodType)):
         # called as @Pipeable
-        # argNames = inspect.getargspec(args[0]).args
-        argNames = list(inspect.signature(args[0]).parameters.keys())
+        try:
+            # P3
+            argNames = list(inspect.signature(args[0]).parameters.keys())
+        except:
+            # P2
+            argSpec = inspect.getargspec(args[0])
+            argNames = argSpec.args + ([argSpec.varargs] if argSpec.varargs else [])
         return _CurriedFunctionDecorator(args[0], argNames)
-    raise SyntaxError('must not call Pipeable decorator')
+    else:
+        raise SyntaxError('must not call Pipeable decorator')
 
 class _CurriedFunctionDecorator(object):
     def __init__(self, fn, argNames):
@@ -111,5 +117,16 @@ class MoreArgsRequiredException(Exception):
     pass
 
 
-# TODO assert [1,2,3] >> ApplyEach >> Add(1) == [2,3,4]
+@Pipeable
+def EachChained(x0, values, fn):
+    x = x0
+    for v in values:
+        x = fn(x, v)
+    return x
+
+
+@Pipeable
+def Each(values, fn):
+    return [fn(v) for v in values]
+
 

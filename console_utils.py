@@ -21,7 +21,11 @@
 from pprint import pprint
 from copy import copy
 
-__all__ = ['PP', 'PPP', 'DD', 'HH', 'TT']
+# 3rd party imports
+import numpy as np
+
+
+__all__ = ['PP', 'PPP', 'DD', 'HH', 'TT', 'CRPP', 'LL']
 
 _list_iter_type = type(iter([]))
 
@@ -48,7 +52,6 @@ class _PipeablePrint(object):
         else:
             print(other)
 
-
 PP = _PipeablePrint(False)
 PPP = _PipeablePrint(True)
 
@@ -64,7 +67,6 @@ class _PipeableDir(object):
         print(dir(other))
         return self
 
-
 DD = _PipeableDir()
 
 
@@ -78,7 +80,6 @@ class _PipeableHelp(object):
         # self << other
         print(help(other))
         return self
-
 
 HH = _PipeableHelp()
 
@@ -94,5 +95,48 @@ class _PipeableType(object):
         print(type(other))
         return self
 
-
 TT = _PipeableType()
+
+
+class _PipeableLen(object):
+
+    def __rrshift__(self, other):
+        # other >> self
+        self._Print(other)
+        return other
+
+    def __lshift__(self, other):
+        # self << other
+        self._Print(other)
+        return self
+
+    def _Print(self, other):
+        if isinstance(other, _list_iter_type):
+            other = list(copy(other))
+        if isinstance(other, np.ndarray):
+            print(other.shape)
+        else:
+            print(len(other))
+
+LL = _PipeableLen()
+
+
+class _PipeablePrintSplitCR(object):
+
+    def __rrshift__(self, other):
+        # other >> self
+        self._Print(other)
+        return other
+
+    def __lshift__(self, other):
+        # self << other
+        self._Print(other)
+        return self
+
+    def _Print(self, other):
+        if isinstance(other, _list_iter_type):
+            other = list(copy(other))
+        for line in other.split('\n'):
+            print(line)
+
+CRPP = _PipeablePrintSplitCR()
