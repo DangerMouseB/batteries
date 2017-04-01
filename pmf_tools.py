@@ -102,6 +102,8 @@ class PMF(PoD):
         object.__setattr__(self, '_cmf', None)
         a = dict(PoDType='PMF')
         a.update(kwargs)
+        if len(args) == 2 and hasattr(args[0], '__iter__') and  hasattr(args[1], '__iter__') and len(args[0]) == len(args[1]):
+            args = zip(*args)
         try:
             super(PMF, self).__init__(*args, **a)
         except:
