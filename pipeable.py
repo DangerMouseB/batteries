@@ -118,15 +118,15 @@ class MoreArgsRequiredException(Exception):
 
 
 @Pipeable
-def EachChained(x0, values, fn):
+def EachChained(x0, xs, fn):
     x = x0
-    for v in values:
-        x = fn(x, v)
+    for xi in xs:
+        x = fn(x, xi)
     return x
 
 
 @Pipeable
-def Each(values, fn):
-    return [fn(v) for v in values]
+def Each(xs, fn):
+    return [fn(x) for x in xs]
 
 
