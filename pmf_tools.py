@@ -52,8 +52,8 @@ class PMF(PoD):
                 for x in Sequence(0, n-1):
                     answer[x] = p
                 return answer
-            else:
-                raise ValueError('args must be either a single int or a sequence of labels')
+            #else:
+            #  raise ValueError('args must be either a single int or a sequence of labels')
         p = 1.0 / len(xs)
         for x in xs:
             answer[x] = p
