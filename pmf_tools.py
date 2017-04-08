@@ -31,7 +31,7 @@ from .console_utils import PP
 
 
 __all__ = ['PMF', 'd6', 'd8', 'd10', 'd12', 'd20', 'Mix', 'Mean', 'ExpectationOf', 'EX',
-           'Normalised', 'RvAdd', 'RvSub', 'CalcPosterior', 'Update', 'Sequence']
+           'Normalised', 'RvAdd', 'RvSub', 'UpdatePrior', 'Sequence']
 
 Missing = sys
 
@@ -42,6 +42,7 @@ Missing = sys
 class PMF(PoD):
     @staticmethod
     def Uniform(*xs):
+        '''Makes a uniform PMF. xs can be sequence of values or [length]'''
         # if a single int it is a count else there must be many xs
         answer = PMF()
         if len(xs) == 1:
@@ -52,8 +53,6 @@ class PMF(PoD):
                 for x in Sequence(0, n-1):
                     answer[x] = p
                 return answer
-            #else:
-            #  raise ValueError('args must be either a single int or a sequence of labels')
         p = 1.0 / len(xs)
         for x in xs:
             answer[x] = p
@@ -95,6 +94,14 @@ class PMF(PoD):
             answer[x] = pdf.evaluate(x)[0]
         return answer.Normalise()
 
+    @staticmethod
+    @Pipeable
+    def FromSample(xs):
+        answer = PMF()
+        for x in xs:
+            answer[x, 0] += 1
+        return answer.Normalise()
+
 
     __slots__ = '_cmf'
 
@@ -105,8 +112,10 @@ class PMF(PoD):
         if len(args) == 2 and hasattr(args[0], '__iter__') and  hasattr(args[1], '__iter__') and len(args[0]) == len(args[1]):
             args = zip(*args)
         try:
+            # P3
             super(PMF, self).__init__(*args, **a)
         except:
+            # P2
             super().__init__(*args, **a)
 
     def __setattr__(self, name, value):
@@ -214,6 +223,7 @@ class PMF(PoD):
 
 @Pipeable
 def Mix(*argsOrListOfArgs):
+    """Mix(*argsOrListOfArgs) where arg is (beta, pmf) or pmf (beta is assumed to be 1.0)"""
     if len(argsOrListOfArgs) == 1 and isinstance(argsOrListOfArgs[0], list):
             args = argsOrListOfArgs[0]
     else:
@@ -275,15 +285,17 @@ def RvSub(lhs, rhs):
         raise TypeError('unhandle types of lhs and / or rhs')
 
 
-@Pipeable
-def CalcPosterior(prior, likelihood):
-    if isinstance(prior, PMF):
-        p_times_l = prior * likelihood
-        return p_times_l >> Normalised
-    else:
-        raise ValueError('Unhandled prior type %s' % str(type(prior)))
 
-Update = CalcPosterior
+@Pipeable(minNumArgs=2)
+def UpdatePrior(arg1, arg2, arg3=sys):
+    """UpdatePrior(arg1, arg2, [arg3])
+    if UpdatePrior(likelihoodFn, priorPmf, data) return priorPmf * likelihoodFn(data) >> Normalised
+    if UpdatePrior(priorPmf, likelihoodPmf) answer priorPmf * likelihoodPmf >> Normalised"""
+    if isinstance(arg1, PMF) and arg3 == sys:
+        return arg1 * arg2 >> Normalised
+    else:
+        return arg2 * arg1(arg3)  >> Normalised
+
 
 
 def Sequence(first, last, n=Missing, step=Missing):
