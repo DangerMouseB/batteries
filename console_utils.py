@@ -73,13 +73,19 @@ DD = _PipeableDir()
 class _PipeableHelp(object):
     def __rrshift__(self, other):
         # other >> self
-        print(help(other))
+        self._help(other)
         return other
 
     def __lshift__(self, other):
         # self << other
-        print(help(other))
+        self._help(other)
         return self
+
+    def _help(self, obj):
+        if hasattr(obj, '_doc'):
+            print(obj._doc)
+        else:
+            help(obj)
 
 HH = _PipeableHelp()
 
