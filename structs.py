@@ -170,7 +170,7 @@ class PoD(object):
             if isinstance(aType, (int, float)):
                 value = _dict.get(name, NA)
                 if value is NA:
-                    _dict[name] = value = aType()
+                    _dict[name] = value = aType
                 return value
         return object.__getattribute__(self, '_dict').get(name_or_name_and_type, NA)
 
