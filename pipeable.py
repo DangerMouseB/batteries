@@ -83,10 +83,10 @@ class _CurriedFunction(object):
         return self._curry(*args, **kwargs)
     def __rrshift__(self, lhs):
         # lhs >> self
-        return self._curry(lhs)
+        return self._curry(*[lhs])
     def __rshift__(self, rhs):
         # self >> rhs
-        return self._curry(rhs)
+        return self._curry(*[rhs])
 
     def _curry(self, *args, **kwargs):
         allKwargs = dict(self._accumulatedKwargs)

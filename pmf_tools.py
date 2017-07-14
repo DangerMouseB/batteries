@@ -18,7 +18,7 @@
 
 
 # python
-import sys
+import sys, random
 
 # 3rd party imports
 import numpy as np
@@ -31,7 +31,7 @@ from .console_utils import PP
 
 
 __all__ = ['PMF', 'd6', 'd8', 'd10', 'd12', 'd20', 'Mix', 'Mean', 'ExpectationOf', 'EX',
-           'Normalised', 'RvAdd', 'RvSub', 'UpdatePrior', 'Sequence']
+           'Normalised', 'RvAdd', 'RvSub', 'UpdatePrior', 'Sequence', 'VarOf', 'Var']
 
 Missing = sys
 
@@ -66,20 +66,26 @@ class PMF(PoD):
         return answer.Normalise()
 
     @staticmethod
-    def Gaussian(mu, sigma, num_sigmas, n):
+    def Gaussian(mu, sigma, xs_or_num_sigmas, n=Missing):
+        if n is not Missing:
+            low = mu - xs_or_num_sigmas * sigma
+            high = mu + xs_or_num_sigmas * sigma
+            xs = Sequence(low, high, n)
+        else:
+            xs = xs_or_num_sigmas
         answer = PMF()
-        low = mu - num_sigmas * sigma
-        high = mu + num_sigmas * sigma
-        for x in Sequence(low, high, n):
+        for x in xs:
             p = scipy.stats.norm.pdf(x, mu, sigma)
             answer[x] = p
         return answer.Normalise()
 
     @staticmethod
+    @Pipeable
     def FromPdf(xs, pdf):
+        '''FromPdf xs, pdf'''
         answer = PMF()
         for x in xs:
-            p = pdf.Density(x)
+            p = pdf(x)
             if isinstance(p, (list, np.ndarray)):
                 p = p[0]
             answer[x] = p
@@ -90,6 +96,7 @@ class PMF(PoD):
     def Kde(xs, data):
         pdf = scipy.stats.gaussian_kde(data)
         answer = PMF()
+        answer._kde = pdf
         for x in xs:
             answer[x] = pdf.evaluate(x)[0]
         return answer.Normalise()
@@ -103,19 +110,20 @@ class PMF(PoD):
         return answer.Normalise()
 
 
-    __slots__ = '_cmf'
+    __slots__ = '_cmf', '_kde'
 
     def __init__(self, *args, **kwargs):
         object.__setattr__(self, '_cmf', None)
+        object.__setattr__(self, '_kde', None)
         a = dict(PoDType='PMF')
         a.update(kwargs)
         if len(args) == 2 and hasattr(args[0], '__iter__') and  hasattr(args[1], '__iter__') and len(args[0]) == len(args[1]):
             args = zip(*args)
         try:
-            # P3
+            # P2
             super(PMF, self).__init__(*args, **a)
         except:
-            # P2
+            # P3
             super().__init__(*args, **a)
 
     def __setattr__(self, name, value):
@@ -220,6 +228,19 @@ class PMF(PoD):
         object.__setattr__(self, '_dict', _dict)
         return self
 
+    def Sample(self, n):
+        kde = object.__getattribute__(self, '_kde')
+        if kde is None:
+            vals = []
+            cmf = self._GetCmf()
+            for _ in range(n):
+                p = random.random()
+                i = np.searchsorted(cmf[:, 1], p, side='left')
+                vals.append(cmf[i, 0])
+            return np.array(vals)
+        else:
+            return kde.resample(n).flatten()
+
 
 @Pipeable
 def Mix(*argsOrListOfArgs):
@@ -255,6 +276,18 @@ def ExpectationOf(pmf):
 
 Mean = EX = ExpectationOf
 
+@Pipeable
+def VarOf(pmf):
+    assert isinstance(pmf, PMF)
+    answer = NA
+    for x, p in pmf.KvIter():
+        if answer is NA:
+            answer = float(x * x * p)
+        else:
+            answer += x *x * p
+    return answer
+
+Var = VarOf
 
 @Pipeable
 def Normalised(pmf):
@@ -298,7 +331,9 @@ def UpdatePrior(arg1, arg2, arg3=sys):
 
 
 
-def Sequence(first, last, n=Missing, step=Missing):
+def Sequence(first, last, **kwargs):
+    n = kwargs.get('n', Missing)
+    step = kwargs.get('step', Missing)
     # TODO move somewhere else
     if step is Missing and n is Missing:
         return list(range(first, last+1, 1))
@@ -307,7 +342,7 @@ def Sequence(first, last, n=Missing, step=Missing):
     elif n is Missing:
         return list(np.arange(first, last + step, step))
     else:
-        raise TypeError('Must not specify n and step')
+        raise TypeError('Must only specify either n or step')
 
 
 
