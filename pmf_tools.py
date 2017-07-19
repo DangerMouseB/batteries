@@ -31,7 +31,7 @@ from .console_utils import PP
 
 
 __all__ = ['PMF', 'd6', 'd8', 'd10', 'd12', 'd20', 'Mix', 'Mean', 'ExpectationOf', 'EX',
-           'Normalised', 'RvAdd', 'RvSub', 'UpdatePrior', 'Sequence', 'VarOf', 'Var']
+           'Normalised', 'RvAdd', 'RvSub', 'RvDiv', 'RvMul', 'UpdatePrior', 'Sequence', 'VarOf', 'Var']
 
 Missing = sys
 
@@ -51,11 +51,11 @@ class PMF(PoD):
                 n = arg
                 p = 1.0 / n
                 for x in Sequence(0, n-1):
-                    answer[x] = p
+                    answer[float(x)] = p
                 return answer
         p = 1.0 / len(xs)
         for x in xs:
-            answer[x] = p
+            answer[float(x)] = p
         return answer
 
     @staticmethod
@@ -313,6 +313,30 @@ def RvSub(lhs, rhs):
         for x1, p1 in lhs.KvIter():
             for x2, p2 in rhs.KvIter():
                 answer[x1 - x2] += p1 * p2
+        return answer.NormaliseAndSort()
+    else:
+        raise TypeError('unhandle types of lhs and / or rhs')
+
+
+@Pipeable
+def RvDiv(lhs, rhs):
+    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
+        answer = PMF()
+        for x1, p1 in lhs.KvIter():
+            for x2, p2 in rhs.KvIter():
+                answer[x1 / x2] += p1 * p2
+        return answer.NormaliseAndSort()
+    else:
+        raise TypeError('unhandle types of lhs and / or rhs')
+
+
+@Pipeable
+def RvMul(lhs, rhs):
+    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
+        answer = PMF()
+        for x1, p1 in lhs.KvIter():
+            for x2, p2 in rhs.KvIter():
+                answer[x1 * x2] += p1 * p2
         return answer.NormaliseAndSort()
     else:
         raise TypeError('unhandle types of lhs and / or rhs')
