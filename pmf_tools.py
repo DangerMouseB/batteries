@@ -31,7 +31,7 @@ from .console_utils import PP
 
 
 __all__ = ['PMF', 'd6', 'd8', 'd10', 'd12', 'd20', 'Mix', 'Mean', 'ExpectationOf', 'EX',
-           'Normalised', 'RvAdd', 'RvSub', 'RvDiv', 'RvMul', 'UpdatePrior', 'Sequence', 'VarOf', 'Var']
+           'Normalised', 'RvAdd', 'RvSub', 'RvDiv', 'RvMul', 'RvMax', 'UpdatePrior', 'Sequence', 'VarOf', 'Var', 'SkewOf', 'Skew']
 
 Missing = sys
 
@@ -58,6 +58,12 @@ class PMF(PoD):
             answer[float(x)] = p
         return answer
 
+
+    @staticmethod
+    def Triangle():
+        #TODO think through interface and implement
+        pass
+
     @staticmethod
     def Power(xs, alpha):
         answer = PMF()
@@ -68,9 +74,7 @@ class PMF(PoD):
     @staticmethod
     def Gaussian(mu, sigma, xs_or_num_sigmas, n=Missing):
         if n is not Missing:
-            low = mu - xs_or_num_sigmas * sigma
-            high = mu + xs_or_num_sigmas * sigma
-            xs = Sequence(low, high, n)
+            xs = Sequence(mu, sigma, sigmas=xs_or_num_sigmas, n=n)
         else:
             xs = xs_or_num_sigmas
         answer = PMF()
@@ -78,6 +82,21 @@ class PMF(PoD):
             p = scipy.stats.norm.pdf(x, mu, sigma)
             answer[x] = p
         return answer.Normalise()
+
+    @staticmethod
+    def Poisson(lamb, N):
+        answer = PMF()
+        for x in range(N):
+            p = scipy.stats.poisson.pmf(x, lamb)
+            answer[x] = p
+        return answer.Normalise()
+
+    @staticmethod
+    def Binomial(n, p):
+        answer = PMF()
+        for k in range(n + 1):
+            answer[k] = scipy.stats.binom.pmf(k, n, p)
+        return answer
 
     @staticmethod
     @Pipeable
@@ -276,11 +295,19 @@ def ExpectationOf(pmf):
 
 Mean = EX = ExpectationOf
 
+
 @Pipeable
 def VarOf(pmf):
     assert isinstance(pmf, PMF)
     answer = NA
+    mean = NA
     for x, p in pmf.KvIter():
+        if mean is NA:
+            mean = float(x * p)
+        else:
+            mean += x * p
+    for x, p in pmf.KvIter():
+        x = x - mean
         if answer is NA:
             answer = float(x * x * p)
         else:
@@ -288,6 +315,28 @@ def VarOf(pmf):
     return answer
 
 Var = VarOf
+
+
+@Pipeable
+def SkewOf(pmf):
+    assert isinstance(pmf, PMF)
+    answer = NA
+    mean = NA
+    for x, p in pmf.KvIter():
+        if mean is NA:
+            mean = float(x * p)
+        else:
+            mean += x * p
+    for x, p in pmf.KvIter():
+        x = x - mean
+        if answer is NA:
+            answer = float(x * x * x * p)
+        else:
+            answer += x *x * x * p
+    return answer
+
+Skew = SkewOf
+
 
 @Pipeable
 def Normalised(pmf):
@@ -342,6 +391,17 @@ def RvMul(lhs, rhs):
         raise TypeError('unhandle types of lhs and / or rhs')
 
 
+@Pipeable
+def RvMax(lhs, rhs):
+    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
+        answer = PMF()
+        for x1, p1 in lhs.KvIter():
+            for x2, p2 in rhs.KvIter():
+                answer[x1 if x1 > x2 else x2] += p1 * p2
+        return answer.NormaliseAndSort()
+    else:
+        raise TypeError('unhandle types of lhs and / or rhs')
+
 
 @Pipeable(minNumArgs=2)
 def UpdatePrior(arg1, arg2, arg3=sys):
@@ -354,19 +414,30 @@ def UpdatePrior(arg1, arg2, arg3=sys):
         return arg2 * arg1(arg3)  >> Normalised
 
 
-
-def Sequence(first, last, **kwargs):
+def Sequence(*args, **kwargs):
+    # TODO move somewhere else
+    assert len(args) == 2
     n = kwargs.get('n', Missing)
     step = kwargs.get('step', Missing)
-    # TODO move somewhere else
+    sigmas = kwargs.get('sigmas', Missing)
     if step is Missing and n is Missing:
+        first , last = args
         return list(range(first, last+1, 1))
-    elif step is Missing:
+    elif n is not Missing and sigmas is not Missing:
+        mu, sigma = args
+        low = mu - sigmas * sigma
+        high = mu + sigmas * sigma
+        return Sequence(low, high, n=n)
+    elif n is not Missing and sigmas is Missing:
+        first , last = args
         return list(np.linspace(first, last, n))
-    elif n is Missing:
+    elif n is Missing and step is not Missing:
+        first , last = args
         return list(np.arange(first, last + step, step))
     else:
         raise TypeError('Must only specify either n or step')
+
+
 
 
 
