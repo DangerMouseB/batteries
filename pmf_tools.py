@@ -73,6 +73,15 @@ class PMF(PoD):
 
     @staticmethod
     def Gaussian(mu, sigma, xs_or_num_sigmas, n=Missing):
+        """
+        e.g. PMF.Gaussian(0, 1, Sequence(-3, 3, step=0.1))
+        e.g. PMF.Gaussian(0, 1, 3, 60)
+        :param mu: 
+        :param sigma: 
+        :param xs_or_num_sigmas: 
+        :param n: 
+        :return: 
+        """
         if n is not Missing:
             xs = Sequence(mu, sigma, sigmas=xs_or_num_sigmas, n=n)
         else:

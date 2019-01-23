@@ -1,7 +1,7 @@
 
 import numpy as np
 
-def AsBars(xs, ys, align='center', width=None):
+def AsSteps(xs, ys, align='center', width=None):
     #xMin, xMax = min(xs), max(xs)
     if width is None:
         width = np.diff(xs).min()
@@ -24,5 +24,4 @@ def AsBars(xs, ys, align='center', width=None):
         pxs = np.array(pxs) - width / 2.0
     elif align == 'right':
         pxs = np.array(pxs) - width
-    return pxs, pys
-
+    return pxs, np.array(pys)
