@@ -426,6 +426,15 @@ class PoDGroup(object):
     def __getattr__(self, name):
         return PoDGroup([getattr(e, name) for e in self._values])
 
+    def __getitem__(self, name):
+        return PoDGroup([getattr(e, name) for e in self._values])
+
+    def __setitem__(self, name, value):
+        raise NotImplementedError()
+
+    def __delitem__(self, name):
+        raise NotImplementedError()
+
     def __iter__(self):
         return self._values.__iter__()
 
@@ -437,8 +446,12 @@ class PoDGroup(object):
 
     def Add(self, element):
         self._values.append(element)
+        return self
 
-    # element wise operations
+    def __lshift__(self, other):
+        # self << other1 << other2
+        self._values.append(other)
+        return self
 
     def __add__(self, other):
         # self + other
@@ -601,12 +614,6 @@ class _AbsentClass(type):
         return Absent
 
 
-
-# # P2
-# class Absent(object):
-#     __metaclass__ = _AbsentClass
-
-# P3
 class Absent(object, metaclass=_AbsentClass):
     pass
 
@@ -687,11 +694,7 @@ class _NAClass(type):
     def __call__(cls):
         return NA
 
-# # P2
-# class NA(object):
-#     __metaclass__ = _NAClass
 
-# P3
 class NA(object, metaclass=_NAClass):
     pass
 

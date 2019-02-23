@@ -17,8 +17,14 @@
 #*******************************************************************************
 
 
-from batteries.collections import LambdaDictionary, concreteSlice
+from batteries.collections import concreteSlice, Collector
 from batteries.testing import ErrorTypeRaised
+
+
+def test_Collector():
+    a = Collector()
+    a << 'hello'
+    assert a[0] == 'hello'
 
 
 def test_concreteSlice():
@@ -40,41 +46,52 @@ def test_concreteSlice():
     assert ErrorTypeRaised(concreteSlice, slice(-1, -2), 5) == ValueError
     
 
-def test_LambdaDictionary1():
-    fred = LambdaDictionary()
-    fred.lamb = lambda x: x.upper()
-    assert len(fred) == 0
+# def test_LambdaDictionary1():
+#     fred = LambdaDictionary()
+#     fred.lamb = lambda x: x.upper()
+#     assert len(fred) == 0
+#
+#     fred["hello"] = 1
+#     assert len(fred) == 1
+#     assert fred["HEllo"] == 1
+#     assert "heLLo" in fred
+#     assert " hello " not in fred
+#     assert "HELLO" not in fred.keys()
+#     assert "HELLO" in fred._keys()
+#     assert fred.items()[0][0] == "hello"
+#     fred["hello "] = 2
+#     assert len(fred) == 2
+#
+#
+# def test_LambdaDictionary2():
+#     fred = LambdaDictionary()
+#     fred.lamb = lambda x: x.replace(" ","").upper()
+#     assert len(fred) == 0
+#
+#     fred["h ello "] = 1
+#     assert len(fred) == 1
+#     assert fred.keys() == ["h ello "], fred.keys()
+#     assert fred._keys() == ["HELLO"], fred._keys()
+#     assert fred["HEllo"] == 1
+#     assert fred.has_key(" h e L l O ")
+#     assert "heLLo" in fred
+#     assert " hello " in fred
+#     assert "HELLO" not in fred.keys()
+#     assert fred.items()[0][0] == "h ello "
+#
+#     fred["Hello"] = 2
+#     assert len(fred) == 1
+#     assert "h ello " not in fred.keys()
     
-    fred["hello"] = 1
-    assert len(fred) == 1
-    assert fred["HEllo"] == 1
-    assert "heLLo" in fred
-    assert " hello " not in fred
-    assert "HELLO" not in fred.keys()
-    assert "HELLO" in fred._keys()
-    assert fred.items()[0][0] == "hello"
-    fred["hello "] = 2
-    assert len(fred) == 2
-   
-   
-def test_LambdaDictionary2():
-    fred = LambdaDictionary()
-    fred.lamb = lambda x: x.replace(" ","").upper()
-    assert len(fred) == 0
-    
-    fred["h ello "] = 1
-    assert len(fred) == 1
-    assert fred.keys() == ["h ello "], fred.keys()
-    assert fred._keys() == ["HELLO"], fred._keys()
-    assert fred["HEllo"] == 1
-    assert fred.has_key(" h e L l O ")
-    assert "heLLo" in fred
-    assert " hello " in fred
-    assert "HELLO" not in fred.keys()
-    assert fred.items()[0][0] == "h ello "
-    
-    fred["Hello"] = 2
-    assert len(fred) == 1
-    assert "h ello " not in fred.keys()
-    
-    
+
+def main():
+    test_Collector()
+    test_concreteSlice()
+    # test_LambdaDictionary1()
+    # test_LambdaDictionary2()
+    print('pass')
+
+
+if __name__ == '__main__':
+    main()
+

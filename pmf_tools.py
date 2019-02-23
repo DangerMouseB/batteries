@@ -27,11 +27,12 @@ import scipy.stats
 # local imports
 from .pipeable import MoreArgsRequiredException, Pipeable
 from .structs import PoD, NA, Sum
-from .console_utils import PP
+from .useful import Sequence
 
 
 __all__ = ['PMF', 'd6', 'd8', 'd10', 'd12', 'd20', 'Mix', 'Mean', 'ExpectationOf', 'EX',
-           'Normalised', 'RvAdd', 'RvSub', 'RvDiv', 'RvMul', 'RvMax', 'UpdatePrior', 'Sequence', 'VarOf', 'Var', 'SkewOf', 'Skew']
+           'Normalised', 'RvAdd', 'RvSub', 'RvDiv', 'RvMul', 'RvMax', 'UpdatePrior', 'Sequence', 'VarOf', 'Var',
+           'SkewOf', 'Skew', 'ToXY']
 
 Missing = sys
 
@@ -141,6 +142,7 @@ class PMF(PoD):
     __slots__ = '_cmf', '_kde'
 
     def __init__(self, *args, **kwargs):
+        ""
         object.__setattr__(self, '_cmf', None)
         object.__setattr__(self, '_kde', None)
         a = dict(PoDType='PMF')
@@ -241,7 +243,6 @@ class PMF(PoD):
         xps = []
         totalP = 0.0
         for k, v in _dict.items():
-            # TODO watch out for unicode in P2
             if isinstance(k, str) and k[:1] == '_':
                 secret.append( (k, v) )
             else:
@@ -423,29 +424,13 @@ def UpdatePrior(arg1, arg2, arg3=sys):
         return arg2 * arg1(arg3)  >> Normalised
 
 
-def Sequence(*args, **kwargs):
-    # TODO move somewhere else
-    assert len(args) == 2
-    n = kwargs.get('n', Missing)
-    step = kwargs.get('step', Missing)
-    sigmas = kwargs.get('sigmas', Missing)
-    if step is Missing and n is Missing:
-        first , last = args
-        return list(range(first, last+1, 1))
-    elif n is not Missing and sigmas is not Missing:
-        mu, sigma = args
-        low = mu - sigmas * sigma
-        high = mu + sigmas * sigma
-        return Sequence(low, high, n=n)
-    elif n is not Missing and sigmas is Missing:
-        first , last = args
-        return list(np.linspace(first, last, n))
-    elif n is Missing and step is not Missing:
-        first , last = args
-        return list(np.arange(first, last + step, step))
-    else:
-        raise TypeError('Must only specify either n or step')
 
+
+
+@Pipeable
+def ToXY(pmf):
+    xys = list(pmf.KvIter())
+    return list(zip(*xys))
 
 
 

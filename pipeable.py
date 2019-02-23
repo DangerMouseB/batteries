@@ -22,10 +22,10 @@ import types, inspect
 
 
 # local imports
-from . import Missing
+from .missing import Missing
 
 
-__all__ = ['Pipeable', 'MoreArgsRequiredException', 'Chain', 'Each', 'Pipeables']
+__all__ = ['Pipeable', 'MoreArgsRequiredException', 'Chain', 'Apply', 'Each', 'EachAll', 'Pipeables']
 
 # if we want to parameterise a function not in a left to right manner then we must specify those arguments as kwargs
 # the >> (rshift) operator adds an argument to the list - when enough arguments are present then the actual function
@@ -138,10 +138,25 @@ def Chain(x0, args, f):
 
 
 @Pipeable
-def Each(xs, f):
-    """Each(xs, f)
+def Apply(xs, f):
+    """Apply(xs, f)
     Answers [f(x) for x in xs]"""
     return [f(x) for x in xs]
+
+
+@Pipeable
+def Each(f, listOfArg):
+    # much the same as Apply but conveys a subtly different relationship between the function and the list (more q llike)
+    """Each(f, listOfArg)
+    Answers [f(arg) for arg in listOfArg]"""
+    return [f(arg) for arg in listOfArg]
+
+
+@Pipeable
+def EachAll(f, listOfArgs):
+    """EachAll(f, listOfArgs)
+    Answers [f(*arg) for arg in listOfArgs]"""
+    return [f(*args) for args in listOfArgs]
 
 
 @Pipeable

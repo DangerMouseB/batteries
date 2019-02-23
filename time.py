@@ -144,7 +144,7 @@ class date(object):
     
     def __init__(self, *args, **kwargs):
         if len(args) == 1: 
-            if type(args[0]) not in (str, unicode): raise TypeError("arg[0] must be a date string")
+            if type(args[0]) not in (str): raise TypeError("arg[0] must be a date string")
             self.__initProperties__()
             fmt = kwargs.get('format')
             if fmt is None: fmt = "%d/%m/%Y"              # apologies to any North American's

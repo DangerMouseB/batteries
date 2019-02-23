@@ -20,8 +20,8 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
 
-from batteries import Missing
-from batteries.collections import IdentitySet, LambdaDictionary
+from .missing import Missing
+from .collections import IdentitySet, LambdaDictionary
 
 
 # TODO
