@@ -36,6 +36,7 @@ __all__ = ['Pipeable', 'MoreArgsRequiredException', 'Chain', 'Apply', 'Each', 'E
 
 def Pipeable(*args, **kwargs):
     minNumArgs = kwargs.get('minNumArgs', None)
+    consumesLHS = kwargs.get('consumesLHS', False)
     def WrapFn(fn):
         try:
             # P3
@@ -44,36 +45,52 @@ def Pipeable(*args, **kwargs):
             # P2
             argSpec = inspect.getargspec(fn)
             argNames = argSpec.args + ([argSpec.varargs] if argSpec.varargs else [])
-        return _CurriedFunctionDecorator(fn, argNames, len(argNames) if minNumArgs is None else minNumArgs)
+        return _CurriedFunctionDecorator(fn, argNames, len(argNames) if minNumArgs is None else minNumArgs, consumesLHS)
     if len(args) == 1 and isinstance(args[0], (types.FunctionType, types.MethodType)):
-        # decorated as @Pipeable
+        # decorated as @Pipeable so args[0] is the function being wrapped
         return WrapFn(args[0])
     else:
         # decorated as @Pipeable() or @Pipeable(minNumArgs=2) etc
         return WrapFn
 
 class _CurriedFunctionDecorator(object):
-    def __init__(self, fn, argNames, minNumArgs):
+    def __init__(self, fn, argNames, minNumArgs, consumesLHS):
         self._fn = fn
         self._minNumArgs = minNumArgs
+        self._consumesLHS = consumesLHS
         if hasattr(fn, '__doc__'):
             self._doc = fn.__doc__
         self._argNames = argNames
     def __call__(self, *args, **kwargs):
-        return _CurriedFunction(self._fn, self._argNames, self._minNumArgs)(*args, **kwargs)
+        return _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(*args, **kwargs)
     def __rrshift__(self, lhs):
         # lhs >> self
         '''Appends LHS to the list of arguments for the function'''
-        return _CurriedFunction(self._fn, self._argNames, self._minNumArgs)(lhs)
+        return _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(lhs)
     def __rshift__(self, rhs):
         # self >> rhs
         '''Appends RHS to the list of arguments for the function'''
-        return _CurriedFunction(self._fn, self._argNames, self._minNumArgs)(rhs)
+        if isinstance(rhs, (_CurriedFunction, _CurriedFunctionDecorator)) and rhs._consumesLHS:
+            curriedMe = _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)
+            return rhs.__rrshift__(curriedMe)
+        else:
+            return _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(rhs)
+    def __rlshift__(self, lhs):
+        # lhs << self
+        '''Appends LHS to the list of arguments for the function'''
+        _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(lhs)
+        return lhs
+    def __lshift__(self, rhs):
+        # self << rhs
+        '''Appends RHS to the list of arguments for the function'''
+        _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(rhs)
+        return self
 
 class _CurriedFunction(object):
-    def __init__(self, fn, argNames, minNumArgs):
+    def __init__(self, fn, argNames, minNumArgs, consumesLHS):
         self._fn = fn
         self._minNumArgs = minNumArgs
+        self._consumesLHS = consumesLHS
         if hasattr(fn, '__doc__'):
             self._doc = fn.__doc__
         self._argNames = argNames
@@ -86,7 +103,10 @@ class _CurriedFunction(object):
         return self._curry(*[lhs])
     def __rshift__(self, rhs):
         # self >> rhs
-        return self._curry(*[rhs])
+        if isinstance(rhs, (_CurriedFunction, _CurriedFunctionDecorator)) and rhs._consumesLHS:
+            return rhs.__rrshift__(self)
+        else:
+            return self._curry(*[rhs])
 
     def _curry(self, *args, **kwargs):
         allKwargs = dict(self._accumulatedKwargs)
@@ -96,7 +116,7 @@ class _CurriedFunction(object):
         numArgs = len(allArgs) + len(allKwargs)
         if numArgs < self._minNumArgs:
             # return a new instance of myself with extra args or kwargs curried
-            answer = _CurriedFunction(self._fn, self._argNames, self._minNumArgs)
+            answer = _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)
             answer._accumulatedKwargs = allKwargs
             answer._accumulatedArgs = allArgs
             return answer
@@ -104,7 +124,7 @@ class _CurriedFunction(object):
             try:
                 return self._fn(*self._argsAndKwargsAsArgs(allArgs, allKwargs))
             except MoreArgsRequiredException:
-                answer = _CurriedFunction(self._fn, self._argNames, self._minNumArgs)
+                answer = _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)
                 answer._accumulatedKwargs = allKwargs
                 answer._accumulatedArgs = allArgs
                 return answer
@@ -144,7 +164,7 @@ def Apply(xs, f):
     return [f(x) for x in xs]
 
 
-@Pipeable
+@Pipeable(consumesLHS=True)
 def Each(f, listOfArg):
     # much the same as Apply but conveys a subtly different relationship between the function and the list (more q llike)
     """Each(f, listOfArg)
@@ -152,7 +172,7 @@ def Each(f, listOfArg):
     return [f(arg) for arg in listOfArg]
 
 
-@Pipeable
+@Pipeable(consumesLHS=True)
 def EachAll(f, listOfArgs):
     """EachAll(f, listOfArgs)
     Answers [f(*arg) for arg in listOfArgs]"""

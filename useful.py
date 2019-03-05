@@ -76,7 +76,6 @@ def Flip(listOfLists):
 
 
 def Sequence(*args, **kwargs):
-    # TODO move somewhere else
     assert len(args) == 2
     n = kwargs.get('n', Missing)
     step = kwargs.get('step', Missing)

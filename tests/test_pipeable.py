@@ -17,7 +17,11 @@
 #*******************************************************************************
 
 
-from ..pipeable import Pipeable, Each, EachChained
+import sys
+print(sys.path)
+
+
+from ..pipeable import Pipeable, Each, Apply, EachAll, Chain
 from ..pmf_tools import Sequence
 
 
@@ -38,17 +42,34 @@ def test_Pipeable():
     def Update(a, b):
         return a + b
 
-    assert Sequence(1, 3) >> Each >> Update(b=1) == Sequence(2, 4)
+    assert Sequence(1, 3) >> Apply >> Update(b=1) == Sequence(2, 4)
 
     prior = 0
     likelihoods = Sequence(1, 3)
-    assert likelihoods >> EachChained(prior) >> Update == 6
+    assert likelihoods >> Chain(prior) >> Update == 6
 
+
+@Pipeable
+def Identity(x):
+    return x
+
+def test_consumesLHS():
+    # the two caes in mind at the moment are
+    # list >> Apply >> Fn - Apply calls Fn so not reversed
+    # Fn >> Each >> list - Each calls Fn so is reversed
+
+    assert ([1, 2, 3] >> Apply >> Identity) == [1, 2, 3]
+    assert (Identity >> Each >> [1, 2, 3]) == [1, 2, 3]
+    assert (Identity >> EachAll >> [[1], [2], [3]]) == [1, 2, 3]
+    # `a`b ,' `c`d
+    # [1,2] >> EachBoth(Identity) >> [3,4]
 
 def main():
     test_Pipeable()
+    test_consumesLHS()
     print('pass')
 
 
 if __name__ == '__main__':
     main()
+
