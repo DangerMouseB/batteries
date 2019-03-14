@@ -23,6 +23,8 @@ print(sys.path)
 
 from ..pipeable import Pipeable, Each, Apply, EachAll, Chain
 from ..pmf_tools import Sequence
+from ..testing import AssertRaises
+import numpy as np
 
 
 def test_Pipeable():
@@ -64,9 +66,18 @@ def test_consumesLHS():
     # `a`b ,' `c`d
     # [1,2] >> EachBoth(Identity) >> [3,4]
 
+def test_shape():
+    @Pipeable
+    def Shape(x):
+        return x.shape
+    with AssertRaises(Exception):
+        assert (np.zeros((1,2)) >> Shape) == (1,2)
+    assert (Shape >> np.zeros((1, 2))) == (1, 2)
+
 def main():
     test_Pipeable()
     test_consumesLHS()
+    test_shape()
     print('pass')
 
 
