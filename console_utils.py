@@ -25,7 +25,7 @@ from copy import copy
 import numpy as np
 
 
-__all__ = ['PP', 'PPP', 'DD', 'HH', 'TT', 'CRPP', 'LL']
+__all__ = ['PPP', 'DD', 'HH', 'TT', 'CRPP', 'LL']
 
 _list_iter_type = type(iter([]))
 
@@ -52,7 +52,6 @@ class _PipeablePrint(object):
         else:
             print(other)
 
-PP = _PipeablePrint(False)
 PPP = _PipeablePrint(True)
 
 

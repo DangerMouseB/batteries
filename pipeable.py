@@ -4,7 +4,7 @@
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# You may obtain a copy of the License atA2WQ
 #
 #    http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -33,6 +33,7 @@ __all__ = ['Pipeable', 'MoreArgsRequiredException', 'Chain', 'Apply', 'Each', 'E
 # ignores default variables - instead the client will have to provide reduced interfaces if required
 
 # TODO str -> <CurriedFunction Fred (b unbound) at 0xghste>
+# doc strings delegated to fn
 
 def Pipeable(*args, **kwargs):
     minNumArgs = kwargs.get('minNumArgs', None)
@@ -77,12 +78,12 @@ class _CurriedFunctionDecorator(object):
             return _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(rhs)
     def __rlshift__(self, lhs):
         # lhs << self
-        '''Appends LHS to the list of arguments for the function'''
+        '''Appends LHS to the list of arguments for the function and returns the lhs'''
         _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(lhs)
         return lhs
     def __lshift__(self, rhs):
         # self << rhs
-        '''Appends RHS to the list of arguments for the function'''
+        '''Appends RHS to the list of arguments for the function and returns self'''
         _CurriedFunction(self._fn, self._argNames, self._minNumArgs, self._consumesLHS)(rhs)
         return self
 
@@ -107,6 +108,14 @@ class _CurriedFunction(object):
             return rhs.__rrshift__(self)
         else:
             return self._curry(*[rhs])
+    def __rlshift__(self, lhs):
+        # lhs << self
+        self._curry(*[lhs])
+        return lhs
+    def __lshift__(self, rhs):
+        # self << rhs
+        self._curry(*[rhs])
+        return self
 
     def _curry(self, *args, **kwargs):
         allKwargs = dict(self._accumulatedKwargs)

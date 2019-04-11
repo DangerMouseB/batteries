@@ -19,6 +19,7 @@
 
 # python imports
 from collections import OrderedDict
+from numbers import Number
 
 # 3rd party imports
 import numpy as np
@@ -224,15 +225,29 @@ class PoD(object):
             values.append(v)
         return values.__iter__()
 
-    def KvIter(self):
-        # this allows us to access the name value pairs of the PoD
+    def KVs(self):
+        """Answer the <public name, value> pairs"""
         kvs = []
-        _dict = object.__getattribute__(self, '_dict').items()
         for k, v in object.__getattribute__(self, '_dict').items():
             if isinstance(k, str) and k[:1] == '_':
                 continue
-            kvs.append((k, v))
-        return kvs.__iter__()
+            kvs.append([k, v])
+        return kvs
+
+    def KvIter(self):
+        return self.KVs().__iter__()
+
+    def KNumVs(self):
+        """Answer the <public name, numerical value> pairs"""
+        kvs = []
+        for k, v in object.__getattribute__(self, '_dict').items():
+            if (isinstance(k, str) and k[:1] == '_') or not isinstance(v, Number):
+                continue
+            kvs.append([k, v])
+        return kvs
+
+    def KNumVIter(self):
+        return self.KNumVs().__iter__()
 
     def __dir__(self):
         return [k for k in object.__getattribute__(self, '_dict').keys() if not isinstance(k, str) or k[:1] != '_']
@@ -243,21 +258,21 @@ class PoD(object):
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KNumVIter(), other.KNumVIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv + ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self.KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KNumVIter(), other._values):
                 answer[sk] = sv + ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self.KvIter(), other):
+            for (sk, sv), ov in zip(self.KNumVIter(), other):
                 answer[sk] = sv + ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self.KvIter():
+            for sk, sv in self.KNumVIter():
                 answer[sk] = sv + other
             return answer
         else:
@@ -273,21 +288,21 @@ class PoD(object):
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KNumVIter(), other.KNumVIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv - ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self.KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KNumVIter(), other._values):
                 answer[sk] = sv - ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self.KvIter(), other):
+            for (sk, sv), ov in zip(self.KNumVIter(), other):
                 answer[sk] = sv - ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self.KvIter():
+            for sk, sv in self.KNumVIter():
                 answer[sk] = sv - other
             return answer
         else:
@@ -299,21 +314,21 @@ class PoD(object):
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KNumVIter(), other.KNumVIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = ov - sv
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self.KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KNumVIter(), other._values):
                 answer[sk] = ov - sv
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self.KvIter(), other):
+            for (sk, sv), ov in zip(self.KNumVIter(), other):
                 answer[sk] = ov - sv
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self.KvIter():
+            for sk, sv in self.KNumVIter():
                 answer[sk] = other - sv
             return answer
         else:
@@ -325,21 +340,21 @@ class PoD(object):
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KNumVIter(), other.KNumVIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv * ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self.KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KNumVIter(), other._values):
                 answer[sk] = sv * ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self.KvIter(), other):
+            for (sk, sv), ov in zip(self.KNumVIter(), other):
                 answer[sk] = sv * ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self.KvIter():
+            for sk, sv in self.KNumVIter():
                 answer[sk] = sv * other
             return answer
         else:
@@ -365,21 +380,21 @@ class PoD(object):
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KNumVIter(), other.KNumVIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = sv / ov
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self.KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KNumVIter(), other._values):
                 answer[sk] = sv / ov
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self.KvIter(), other):
+            for (sk, sv), ov in zip(self.KNumVIter(), other):
                 answer[sk] = sv / ov
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self.KvIter():
+            for sk, sv in self.KNumVIter():
                 answer[sk] = sv / other
             return answer
         else:
@@ -391,21 +406,21 @@ class PoD(object):
         answer = self.__class__()
         if isinstance(other, PoD):
             # otherDict = object.__getattribute__(other, '_dict')
-            for (sk, sv), (ok, ov) in zip(self.KvIter(), other.KvIter()):
+            for (sk, sv), (ok, ov) in zip(self.KNumVIter(), other.KNumVIter()):
                 if (sk != ok):
                     raise RuntimeError('sk != ok')
                 answer[sk] = ov / sv
             return answer
         if isinstance(other, PoDGroup):
-            for (sk, sv), ov in zip(self.KvIter(), other._values):
+            for (sk, sv), ov in zip(self.KNumVIter(), other._values):
                 answer[sk] = ov / sv
             return answer
         if isinstance(other, (list, tuple)):  # etc
-            for (sk, sv), ov in zip(self.KvIter(), other):
+            for (sk, sv), ov in zip(self.KNumVIter(), other):
                 answer[sk] = ov / sv
             return answer
         if isinstance(other, (float, int)):
-            for sk, sv in self.KvIter():
+            for sk, sv in self.KNumVIter():
                 answer[sk] = other / sv
             return answer
         else:

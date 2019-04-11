@@ -19,6 +19,7 @@
 
 # python
 import sys, random
+from numbers import Number
 
 # 3rd party imports
 import numpy as np
@@ -28,13 +29,12 @@ import scipy.stats
 from .pipeable import MoreArgsRequiredException, Pipeable
 from .structs import PoD, NA, Sum
 from .useful import Sequence
+from .missing import Missing
 
 
 __all__ = ['PMF', 'd6', 'd8', 'd10', 'd12', 'd20', 'Mix', 'Mean', 'ExpectationOf', 'EX',
            'Normalised', 'RvAdd', 'RvSub', 'RvDiv', 'RvMul', 'RvMax', 'UpdatePrior', 'Sequence', 'VarOf', 'Var',
            'SkewOf', 'Skew', 'ToXY']
-
-Missing = sys
 
 # PMF - Probability Mass Function - the subset of all PMFs where xs (the values of the random variable) are discrete and known
 # mean, median(s), stdev, percentile, CDF, etc of a DRV can be meaningfully calculated
@@ -67,10 +67,10 @@ class PMF(PoD):
 
     @staticmethod
     def Power(xs, alpha):
-        answer = PMF()
+        answer = PoD()
         for x in xs:
             answer[x] = x ** (-alpha)
-        return answer.Normalise()
+        return answer >> Normalised
 
     @staticmethod
     def Gaussian(mu, sigma, xs_or_num_sigmas, n=Missing):
@@ -87,19 +87,19 @@ class PMF(PoD):
             xs = Sequence(mu, sigma, sigmas=xs_or_num_sigmas, n=n)
         else:
             xs = xs_or_num_sigmas
-        answer = PMF()
+        answer = PoD()
         for x in xs:
             p = scipy.stats.norm.pdf(x, mu, sigma)
             answer[x] = p
-        return answer.Normalise()
+        return answer >> Normalised
 
     @staticmethod
     def Poisson(lamb, N):
-        answer = PMF()
+        answer = PoD()
         for x in range(N):
             p = scipy.stats.poisson.pmf(x, lamb)
             answer[x] = p
-        return answer.Normalise()
+        return answer >> Normalised
 
     @staticmethod
     def Binomial(n, p):
@@ -112,31 +112,31 @@ class PMF(PoD):
     @Pipeable
     def FromPdf(xs, pdf):
         '''FromPdf xs, pdf'''
-        answer = PMF()
+        answer = PoD()
         for x in xs:
             p = pdf(x)
             if isinstance(p, (list, np.ndarray)):
                 p = p[0]
             answer[x] = p
-        return answer.Normalise()
+        return answer >> Normalised
 
     @staticmethod
     @Pipeable
     def Kde(xs, data):
         pdf = scipy.stats.gaussian_kde(data)
-        answer = PMF()
+        answer = PoD()
         answer._kde = pdf
         for x in xs:
             answer[x] = pdf.evaluate(x)[0]
-        return answer.Normalise()
+        return answer >> Normalised
 
     @staticmethod
     @Pipeable
     def FromSample(xs):
-        answer = PMF()
+        answer = PoD()
         for x in xs:
             answer[x, 0] += 1
-        return answer.Normalise()
+        return answer >> Normalised
 
 
     __slots__ = '_cmf', '_kde'
@@ -147,8 +147,8 @@ class PMF(PoD):
         object.__setattr__(self, '_kde', None)
         a = dict(PoDType='PMF')
         a.update(kwargs)
-        if len(args) == 2 and hasattr(args[0], '__iter__') and  hasattr(args[1], '__iter__') and len(args[0]) == len(args[1]):
-            args = zip(*args)
+        if len(args) == 2 and hasattr(args[0], '__iter__') and  hasattr(args[1], '__iter__') and len(args[0]) == len(args[1]) and len(args[0]) != 2:
+            raise Exception("PMF(ks, vs) is no longer allowed")
         try:
             # P2
             super(PMF, self).__init__(*args, **a)
@@ -227,36 +227,6 @@ class PMF(PoD):
             ps.append(p)
         return xs, ps
 
-    def Normalise(self):
-        '''In place normalisation so total probability equals 1.0'''
-        totalP = 0.0
-        for x, p in self.KvIter():
-            totalP += p
-        for x, p in self.KvIter():
-            self[x] = p / totalP
-        return self
-
-    def NormaliseAndSort(self):
-        '''Another post processing operation'''
-        _dict = object.__getattribute__(self, '_dict')
-        secret = []
-        xps = []
-        totalP = 0.0
-        for k, v in _dict.items():
-            if isinstance(k, str) and k[:1] == '_':
-                secret.append( (k, v) )
-            else:
-                xps.append( (k, v) )
-                totalP += v
-        xps.sort(key=lambda xp: xp[0])
-        _dict = type(_dict)()
-        for k, v in secret:
-            _dict[k] = v
-        for x, p in xps:
-            _dict[x] = p / totalP
-        object.__setattr__(self, '_dict', _dict)
-        return self
-
     def Sample(self, n):
         kde = object.__getattribute__(self, '_kde')
         if kde is None:
@@ -271,7 +241,7 @@ class PMF(PoD):
             return kde.resample(n).flatten()
 
 
-@Pipeable
+@Pipeable(minNumArgs=2)
 def Mix(*argsOrListOfArgs):
     """Mix(*argsOrListOfArgs) where arg is (beta, pmf) or pmf (beta is assumed to be 1.0)"""
     if len(argsOrListOfArgs) == 1 and isinstance(argsOrListOfArgs[0], list):
@@ -280,16 +250,12 @@ def Mix(*argsOrListOfArgs):
         args = argsOrListOfArgs
     if len(args) < 2:
         raise MoreArgsRequiredException()
-    answer = PMF()
+    result = {}
     for arg in args:
-        if isinstance(arg, tuple):
-            beta, pmf = arg
-        else:
-            beta = 1.0
-            pmf = arg
+        beta, pmf = arg if isinstance(arg, tuple) else (1.0, arg)
         for x, p in pmf.KvIter():
-            answer[x] += beta * p
-    return answer.NormaliseAndSort()
+            result[x] = result.setdefault(x, 0) + beta * p
+    return PMF(*_sortAndNormaliseVPs(list(result.items())))
 
 
 @Pipeable
@@ -348,69 +314,97 @@ def SkewOf(pmf):
 Skew = SkewOf
 
 
+def _normaliseKNumVs(kvs):
+    '''In place normalisation so total probability equals 1.0 - avoiding labels'''
+    sum = 0.0
+    for k, v in kvs:
+        if isinstance(v, Number):
+            sum += v
+    for i, kv in enumerate(kvs):
+        if isinstance(kv[1], Number):
+            kvs[i] = (kv[0], kv[1] / sum)
+    return kvs
+
+
+def _normaliseVPs(vps):
+    '''In place normalisation so total probability equals 1.0'''
+    sum = 0.0
+    for _, p in vps:
+        sum += p
+    for i, vp in enumerate(vps):
+        vps[i] = (vp[0], vp[1] / sum)
+    return vps
+
+
+def _sortAndNormaliseVPs(vps):
+    vps.sort(key=lambda vp: vp[0])
+    _normaliseVPs(vps)
+    return vps
+
+
 @Pipeable
-def Normalised(pmf):
-    return pmf / Sum(pmf)
+def Normalised(pod):
+    return PMF(*_normaliseKNumVs(pod.KVs()))
 
 
 @Pipeable
 def RvAdd(lhs, rhs):
-    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
-        answer = PMF()
-        for x1, p1 in lhs.KvIter():
-            for x2, p2 in rhs.KvIter():
-                answer[x1 + x2] += p1 * p2
-        return answer.NormaliseAndSort()
-    else:
-        raise TypeError('unhandle types of lhs and / or rhs')
+    if not isinstance(lhs, PMF): raise TypeError('lhs mist be a PMF')
+    if not isinstance(rhs, PMF): raise TypeError('rhs mist be a PMF')
+    result = {}
+    for x1, p1 in lhs.KNumVs():
+        for x2, p2 in rhs.KNumVs():
+            k = x1 + x2
+            result[k] = result.setdefault(k, 0.0) + p1 * p2
+    return PMF(*_sortAndNormaliseVPs(list(result.items())))
 
 
 @Pipeable
 def RvSub(lhs, rhs):
-    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
-        answer = PMF()
-        for x1, p1 in lhs.KvIter():
-            for x2, p2 in rhs.KvIter():
-                answer[x1 - x2] += p1 * p2
-        return answer.NormaliseAndSort()
-    else:
-        raise TypeError('unhandle types of lhs and / or rhs')
+    if not isinstance(lhs, PMF): raise TypeError('lhs mist be a PMF')
+    if not isinstance(rhs, PMF): raise TypeError('rhs mist be a PMF')
+    result = {}
+    for x1, p1 in lhs.KNumVs():
+        for x2, p2 in rhs.KNumVs():
+            k = x1 - x2
+            result[k] = result.setdefault(k, 0.0) + p1 * p2
+    return PMF(*_sortAndNormaliseVPs(list(result.items())))
 
 
 @Pipeable
 def RvDiv(lhs, rhs):
-    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
-        answer = PMF()
-        for x1, p1 in lhs.KvIter():
-            for x2, p2 in rhs.KvIter():
-                answer[x1 / x2] += p1 * p2
-        return answer.NormaliseAndSort()
-    else:
-        raise TypeError('unhandle types of lhs and / or rhs')
+    if not isinstance(lhs, PMF): raise TypeError('lhs mist be a PMF')
+    if not isinstance(rhs, PMF): raise TypeError('rhs mist be a PMF')
+    result = {}
+    for x1, p1 in lhs.KNumVs():
+        for x2, p2 in rhs.KNumVs():
+            k = x1 / x2
+            result[k] = result.setdefault(k, 0.0) + p1 * p2
+    return PMF(*_sortAndNormaliseVPs(list(result.items())))
 
 
 @Pipeable
 def RvMul(lhs, rhs):
-    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
-        answer = PMF()
-        for x1, p1 in lhs.KvIter():
-            for x2, p2 in rhs.KvIter():
-                answer[x1 * x2] += p1 * p2
-        return answer.NormaliseAndSort()
-    else:
-        raise TypeError('unhandle types of lhs and / or rhs')
+    if not isinstance(lhs, PMF): raise TypeError('lhs mist be a PMF')
+    if not isinstance(rhs, PMF): raise TypeError('rhs mist be a PMF')
+    result = {}
+    for x1, p1 in lhs.KNumVs():
+        for x2, p2 in rhs.KNumVs():
+            k = x1 * x2
+            result[k] = result.setdefault(k, 0.0) + p1 * p2
+    return PMF(*_sortAndNormaliseVPs(list(result.items())))
 
 
 @Pipeable
 def RvMax(lhs, rhs):
-    if isinstance(lhs, PMF) and isinstance(rhs, PMF):
-        answer = PMF()
-        for x1, p1 in lhs.KvIter():
-            for x2, p2 in rhs.KvIter():
-                answer[x1 if x1 > x2 else x2] += p1 * p2
-        return answer.NormaliseAndSort()
-    else:
-        raise TypeError('unhandle types of lhs and / or rhs')
+    if not isinstance(lhs, PMF): raise TypeError('lhs mist be a PMF')
+    if not isinstance(rhs, PMF): raise TypeError('rhs mist be a PMF')
+    result = {}
+    for x1, p1 in lhs.KNumVs():
+        for x2, p2 in rhs.KNumVs():
+            k = x1 if x1 > x2 else x2
+            result[k] = result.setdefault(k, 0.0) + p1 * p2
+    return PMF(*_sortAndNormaliseVPs(list(result.items())))
 
 
 @Pipeable(minNumArgs=2)
@@ -424,17 +418,13 @@ def UpdatePrior(arg1, arg2, arg3=sys):
         return arg2 * arg1(arg3)  >> Normalised
 
 
-
-
-
 @Pipeable
-def ToXY(pmf):
-    xys = list(pmf.KvIter())
-    return list(zip(*xys))
+def ToXY(pod):
+    return tuple(zip(*pod.KNumVs()))
 
 
 
-
+d4 = PMF.Uniform(*Sequence(1, 4))
 d6 = PMF.Uniform(*Sequence(1, 6))
 d8 = PMF.Uniform(*Sequence(1, 8))
 d10 = PMF.Uniform(*Sequence(1, 10))

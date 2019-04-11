@@ -97,3 +97,9 @@ def Sequence(*args, **kwargs):
     else:
         raise TypeError('Must only specify either n or step')
 
+@Pipeable
+def CallFReturnX(f, x):
+    f(x)
+    return x
+PP = CallFReturnX(print)
+
