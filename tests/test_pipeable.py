@@ -21,7 +21,7 @@ import sys
 print(sys.path)
 
 
-from ..pipeable import Pipeable, Each, Apply, EachAll, Chain
+from ..pipeable import Pipeable, Apply, ApplyArgs, Each, EachArgs, Chain
 from ..pmf_tools import Sequence
 from ..testing import AssertRaises
 import numpy as np
@@ -52,19 +52,34 @@ def test_Pipeable():
 
 
 @Pipeable
-def Identity(x):
+def _Identity(x):
     return x
+
+@Pipeable
+def _Sum(*args):
+    return sum(args)
+
+@Pipeable
+def _Product(*args):
+    answer = args[0]
+    for x in args[1:]:
+        answer *= x
+    return answer
 
 def test_consumesLHS():
     # the two caes in mind at the moment are
     # list >> Apply >> Fn - Apply calls Fn so not reversed
     # Fn >> Each >> list - Each calls Fn so is reversed
 
-    assert ([1, 2, 3] >> Apply >> Identity) == [1, 2, 3]
-    assert (Identity >> Each >> [1, 2, 3]) == [1, 2, 3]
-    assert (Identity >> EachAll >> [[1], [2], [3]]) == [1, 2, 3]
+    assert ([1, 2, 3] >> Apply >> _Identity) == [1, 2, 3]
+    assert ([[1,1], [2,2], [3,3]] >> ApplyArgs >> _Sum) == [2, 4, 6]
+
+    assert (_Identity >> Each >> [1, 2, 3]) == [1, 2, 3]
+    assert (_Sum >> EachArgs >> [[1,1], [2,2], [3,3]]) == [2, 4, 6]
     # `a`b ,' `c`d
-    # [1,2] >> EachBoth(Identity) >> [3,4]
+    # [1,2,3] >> EachBoth(Sum) >> [1,2,3] == [2,4,6]
+
+    # assert ((_Sum, _Product) >> Apply >> Over(1, [1,2,3])) == [7,6]
 
 def test_shape():
     @Pipeable

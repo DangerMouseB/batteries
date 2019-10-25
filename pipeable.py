@@ -25,7 +25,7 @@ import types, inspect
 from .missing import Missing
 
 
-__all__ = ['Pipeable', 'MoreArgsRequiredException', 'Chain', 'Apply', 'Each', 'EachAll', 'Pipeables']
+__all__ = ['Pipeable', 'MoreArgsRequiredException', 'Chain', 'Apply', 'ApplyArgs', 'Each', 'EachArgs', 'Pipeables']
 
 # if we want to parameterise a function not in a left to right manner then we must specify those arguments as kwargs
 # the >> (rshift) operator adds an argument to the list - when enough arguments are present then the actual function
@@ -165,6 +165,7 @@ def Chain(x0, args, f):
         xn = f(xn, arg)
     return xn
 
+Over = Fold = Chain
 
 @Pipeable
 def Apply(xs, f):
@@ -173,19 +174,29 @@ def Apply(xs, f):
     return [f(x) for x in xs]
 
 
-@Pipeable(consumesLHS=True)
-def Each(f, listOfArg):
-    # much the same as Apply but conveys a subtly different relationship between the function and the list (more q llike)
-    """Each(f, listOfArg)
-    Answers [f(arg) for arg in listOfArg]"""
-    return [f(arg) for arg in listOfArg]
-
-
-@Pipeable(consumesLHS=True)
-def EachAll(f, listOfArgs):
-    """EachAll(f, listOfArgs)
-    Answers [f(*arg) for arg in listOfArgs]"""
+@Pipeable
+def ApplyArgs(listOfArgs, f):
+    """ApplyArgs(xs, f)
+    Answers [f(x) for x in xs]"""
     return [f(*args) for args in listOfArgs]
+
+
+@Pipeable(consumesLHS=True)
+def Each(f, xs):
+    # much the same as Apply but conveys a subtly different relationship between the function and the list (more q llike)
+    """Each(f, xs)
+    Answers [f(x) for arg in xs]"""
+    return [f(arg) for arg in xs]
+
+
+@Pipeable(consumesLHS=True)
+def EachArgs(f, listOfArgs):
+    """EachArgs(f, listOfArgs)
+    Answers [f(*args) for args in listOfArgs]"""
+    return [f(*args) for args in listOfArgs]
+
+
+# can now to EachBoth and EachAll :)
 
 
 @Pipeable

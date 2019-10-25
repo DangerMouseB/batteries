@@ -35,6 +35,11 @@ def LogisticCDFInv(p, mu, s):
 
 
 @Pipeable
+def Len(lenable):
+    return len(lenable)
+
+
+@Pipeable
 def Mean(pg):
     return np.mean(pg._values)
 
