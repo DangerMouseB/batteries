@@ -17,10 +17,17 @@
 #*******************************************************************************
 
 
-class _Missing(object):
-    def __nonzero__(self):
-        return False
+import sys
 
-Missing = _Missing()
+class _Missing(object):
+    def __bool__(self):
+        return False
+    def __repr__(self):
+        # for pretty display in pycharm debugger
+        return 'Missing'
+
+if not hasattr(sys, '_Missing'):
+    sys._Missing = _Missing()
+Missing = sys._Missing
 
 

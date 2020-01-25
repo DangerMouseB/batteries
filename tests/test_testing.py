@@ -17,7 +17,8 @@
 #*******************************************************************************
 
 
-from batteries.testing import StdoutHooker, AssertRaises
+
+from ..testing import StdoutHooker, AssertRaises
 
 
 def testStdoutHooker():
@@ -67,4 +68,14 @@ def testAssertRaises():
         assert e.exceptionType == Fred, (e.exceptionType, e.e)
     except Exception as e:
         assert False, e
-    
+
+
+def main():
+    testStdoutHooker()
+    testAssertRaises()
+    print('pass')
+
+
+if __name__ == '__main__':
+    main()
+

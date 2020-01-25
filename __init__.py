@@ -17,4 +17,12 @@
 #*******************************************************************************
 
 
-from .useful import *
+from .missing import Missing
+try:
+    from .pipeable import *       # wrapped in an exception handler to make testing and debugging easier
+except:
+    pass
+try:
+    from .useful import *       # wrapped in an exception handler to make testing and debugging easier
+except:
+    pass

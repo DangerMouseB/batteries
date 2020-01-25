@@ -1,6 +1,6 @@
 #*******************************************************************************
 #
-#    Copyright (c) 2017 David Briant
+#    Copyright (c) 2017-2020 David Briant
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,27 +17,31 @@
 #*******************************************************************************
 
 
-from ..pmf_tools import RvAdd, Normalised, PoD, d6, Mix, ToXY
-from ..testing import close
 
+from ..useful import assertEqual, chain, each, eachArgs, Pipeable
 
-def test_alot():
-    d4 = PoD(*[(1, 1), (2, 1), (3, 1), (4, 1)]) >> Normalised
-    rv = d4 >> RvAdd >> d4
-    assert rv[2] == 1/16
+def test_stuff():
+    2 >> assertEqual >> 2
 
-    mix = d4 >> Mix >> d6
-    result = mix[1]
-    expected = (1/4 + 1/6) / (4 * (1/4 + 1/6)  + 2 * 1/6)
-    assert close(result, expected, 0.00001), '%s != %s' % (result, expected)
+    @Pipeable
+    def squareIt(x):
+        return x * x
 
-    assert (d4 >> ToXY)[0] == (1.0, 2.0, 3.0, 4.0)
+    @Pipeable
+    def add(x, y):
+        return x + y
+
+    [1,2,3] >> each >> squareIt >> chain(seed=0) >> add >> assertEqual >> 14
+
+    [[1,2], [2,3], [3,4]] >> eachArgs >> add >> assertEqual >> [3, 5, 7]
+
 
 
 def main():
-    test_alot()
+    test_stuff()
     print('pass')
 
 
 if __name__ == '__main__':
     main()
+

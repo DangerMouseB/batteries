@@ -1,6 +1,6 @@
 #*******************************************************************************
 #
-#    Copyright (c) 2017-2019 David Briant
+#    Copyright (c) 2017-2020 David Briant
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,94 +17,64 @@
 #*******************************************************************************
 
 
-import math, numpy as np
+
 from .pipeable import Pipeable
-from .missing import Missing
-
-class ArgumentError(Exception): pass
+_EPS = 7.105427357601E-15      # i.e. double precision
 
 
 @Pipeable
-def LogisticCDF(x, mu, s):
-    return 1 / (1 + math.exp(-1 * (x - mu) / s))
-
-
-@Pipeable
-def LogisticCDFInv(p, mu, s):
-    return mu + -s * math.log(1 / p - 1)
-
-
-@Pipeable
-def Len(lenable):
-    return len(lenable)
-
-
-@Pipeable
-def Mean(pg):
-    return np.mean(pg._values)
-
-
-@Pipeable
-def Std(pg):
-    return np.std(pg._values)
-
-
-@Pipeable
-def Sqrt(x):
-    return np.sqrt(x)
-
-
-@Pipeable
-def Str(a):
-    return str(a)
-
-
-@Pipeable
-def Div(a, b):
-    return a / b
-
-
-@Pipeable
-def Format(format, thing):
-    return format.format(thing)
-
-
-@Pipeable
-def Flip(listOfLists):
-    answer = []
-    for i in range(len(listOfLists)):
-        for j in range(len(listOfLists[0])):
-            if i == 0:
-                answer.append([])
-            answer[j].append(listOfLists[i][j])
-    return answer
-
-
-def Sequence(*args, **kwargs):
-    assert len(args) == 2
-    n = kwargs.get('n', Missing)
-    step = kwargs.get('step', Missing)
-    sigmas = kwargs.get('sigmas', Missing)
-    if step is Missing and n is Missing:
-        first , last = args
-        return list(range(first, last+1, 1))
-    elif n is not Missing and sigmas is not Missing:
-        mu, sigma = args
-        low = mu - sigmas * sigma
-        high = mu + sigmas * sigma
-        return Sequence(low, high, n=n)
-    elif n is not Missing and sigmas is Missing:
-        first , last = args
-        return list(np.linspace(first, last, n))
-    elif n is Missing and step is not Missing:
-        first , last = args
-        return list(np.arange(first, last + step, step))
+def assertEqual(actual, expected, suppressMsg=False, keepWS=False, tolerance=_EPS):
+    if keepWS:
+        act = actual
+        exp = expected
     else:
-        raise TypeError('Must only specify either n or step')
+        act = actual.replace(" ", "").replace("\n", "") if isinstance(actual, (str,)) else actual
+        exp = expected.replace(" ", "").replace("\n", "") if isinstance(expected, (str,)) else expected
+    if isinstance(act, (int, float)) and isinstance(exp, (int, float)):
+        equal = act >> closeTo(tolerance=tolerance) >> exp
+    else:
+        equal = act == exp
+    if equal:
+        return True
+    else:
+        if suppressMsg:
+            raise AssertionError()
+        else:
+            if isinstance(actual, (str,)):
+                actual = '"' + actual + '"'
+            if isinstance(expected, (str,)):
+                expected = '"' + expected + '"'
+            raise AssertionError('expected %s but got %s' % (expected, actual))
 
 @Pipeable
-def CallFReturnX(f, x):
-    f(x)
-    return x
-PP = CallFReturnX(print)
+def closeTo(a, b, tolerance=_EPS):
+    if abs(a) < tolerance:
+        return abs(b) < tolerance
+    else:
+        return abs(a - b) / abs(a) < tolerance
+
+@Pipeable
+def each(xs, f):
+    """each(xs, f)  e.g. xs >> each >> f
+    Answers [f(x) for x in xs]"""
+    return [f(x) for x in xs]
+
+@Pipeable
+def chain(seed, xs, f):
+    """chain(seed, xs, f)    e.g. xs >> chain(seed) >> f
+    Answers resultn where resulti=f(prior, xi) for each x in xs
+    prior = resulti-1 or seed initially"""
+    prior = seed
+    for x in xs:
+        prior = f(prior, x)
+    return prior
+
+@Pipeable
+def eachArgs(listOfArgs, f):
+    """eachArgs(f, listOfArgs)
+    Answers [f(*args) for args in listOfArgs]"""
+    return [f(*args) for args in listOfArgs]
+
+
+
 
