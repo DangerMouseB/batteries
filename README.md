@@ -42,3 +42,5 @@ actual = [1,2,3] >> each >> squareIt >> chain(seed=0) >> add
 expected = 14
 assert actual == expected
 ```
+
+See batteries/tests/test_pipeable.py for a fuller description and example code.
