@@ -22,6 +22,8 @@ from .pipeable import Pipeable
 _EPS = 7.105427357601E-15      # i.e. double precision
 
 
+__all__ = ['assertEqual', 'closeTo', 'each', 'chain', 'eachArgs']
+
 @Pipeable
 def assertEqual(actual, expected, suppressMsg=False, keepWS=False, tolerance=_EPS):
     if keepWS:
