@@ -47,8 +47,8 @@ def Pipeable(*args, overrideLHS=False, pipeOnly=False, leftToRight=Missing, righ
     leftToRight, rightToLeft = (True, False) if (leftToRight is Missing and rightToLeft is Missing) else (leftToRight, rightToLeft)
     leftToRight = not rightToLeft if leftToRight is Missing else leftToRight
     rightToLeft = not leftToRight if rightToLeft is Missing else rightToLeft
-    if leftToRight and rightToLeft:
-        raise TypeError('Function cannot both pipe leftToRight (i.e. >>) and rightToLeft (i.e. <<)')
+    # if leftToRight and rightToLeft:
+    #     raise TypeError('Function cannot both pipe leftToRight (i.e. >>) and rightToLeft (i.e. <<)')
 
     def _DecorateWithPF(fn):
         coreBindings = {}
@@ -67,8 +67,10 @@ def Pipeable(*args, overrideLHS=False, pipeOnly=False, leftToRight=Missing, righ
                 else:
                     optionalBindings[name] = Missing
                     optionalBindingsReprs.append('%s=%s' % (name, parameter.default))
-        if rightToLeft and len(coreBindings) != 1:
-            raise TypeError('rightToLeft functions must have exactly one core (non-optional) argument')
+        # TODO asset that there is only one availble coreBinding when << is invoked
+        # could add a numCoreParameters attribute on init and after each bind
+        # if rightToLeft and len(coreBindings) != 1:
+        #     raise TypeError('rightToLeft functions must have exactly one core (non-optional) argument')
         doc = fn.__doc__ if hasattr(fn, '__doc__') else ''
         fnRepr = '%s(%s)' % (fn.__name__, ', '.join(list(coreBindings.keys()) + optionalBindingsReprs))
         answer = PipeableFunction(fn, coreBindings, optionalBindings, hasKwargs, overrideLHS, pipeOnly, leftToRight, rightToLeft, doc, fnRepr)
