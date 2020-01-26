@@ -116,6 +116,21 @@ def overview():
     # a pipeable can be called using () more than once
     assert toTuple(...,2,...,4)(1,3) == (1,2,3,4)
 
+    # right to left pipeing can only be use when there is one argument left to be bound
+    @Pipeable(leftToRight=True, rightToLeft=True)
+    def fred(a, b):
+        return a + b
+
+    with AssertRaises(TypeError):
+        fred << 1
+    with AssertRaises(TypeError):
+        1 << fred
+
+    joe = 1 >> fred
+    assert 2 << joe == 2
+    assert joe << 2 is joe
+
+
 
 
 def main():
