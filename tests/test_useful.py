@@ -18,7 +18,9 @@
 
 
 
-from ..useful import assertEqual, chain, each, eachArgs, Pipeable
+from ..testing import assertEqual
+from ..pipeable import Pipeable
+from ..useful import chain, each, eachArgs
 
 def test_stuff():
     2 >> assertEqual >> 2

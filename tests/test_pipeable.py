@@ -20,7 +20,7 @@
 
 from ..pipeable import Pipeable, arg, args, kwargs, na
 from ..missing import Missing
-from ..testing import AssertRaises
+from .._testing import AssertRaises
 import numpy as np
 
 

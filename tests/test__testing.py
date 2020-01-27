@@ -18,7 +18,7 @@
 
 
 
-from ..testing import StdoutHooker, AssertRaises
+from .._testing import StdoutHooker, AssertRaises
 
 
 def testStdoutHooker():

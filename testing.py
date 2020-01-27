@@ -1,6 +1,6 @@
 #*******************************************************************************
 #
-#    Copyright (c) 2011-2020 David Briant
+#    Copyright (c) 2019-2020 David Briant
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,56 +17,40 @@
 #*******************************************************************************
 
 
-import sys, traceback
-from .missing import Missing
+from ._testing import HookStdout, AssertRaises
+from .pipeable import Pipeable
 
 
+_EPS = 7.105427357601E-15      # i.e. double precision
 
-class HookStdout(object):
 
-    def __init__(self, lines):
-        self.lines = lines
-        self.textBuffer = ""
-
-    def write(self, text=""):
-        if len(text) > 0:
-            splits = text.split("\n")
-            for split in splits[:-1]:
-                self.textBuffer += split
-                self.lines.append(self.textBuffer)
-                self.textBuffer = ""
-            self.textBuffer += splits[-1:][0]
+@Pipeable
+def assertEqual(actual, expected, suppressMsg=False, keepWS=False, tolerance=_EPS):
+    if keepWS:
+        act = actual
+        exp = expected
+    else:
+        act = actual.replace(" ", "").replace("\n", "") if isinstance(actual, (str,)) else actual
+        exp = expected.replace(" ", "").replace("\n", "") if isinstance(expected, (str,)) else expected
+    if isinstance(act, (int, float)) and isinstance(exp, (int, float)):
+        equal = act >> closeTo(tolerance=tolerance) >> exp
+    else:
+        equal = act == exp
+    if equal:
+        return True
+    else:
+        if suppressMsg:
+            raise AssertionError()
         else:
-            raise NotImplementedError()
+            if isinstance(actual, (str,)):
+                actual = '"' + actual + '"'
+            if isinstance(expected, (str,)):
+                expected = '"' + expected + '"'
+            raise AssertionError('expected %s but got %s' % (expected, actual))
 
-    def __enter__(self):
-        self.oldStdout = sys.stdout
-        sys.stdout = self
-
-    def __exit__(self, type, e, tb):
-        sys.stdout = self.oldStdout
-        return False
-
-
-
-class AssertRaises(object):
-
-    def __init__(self, expectedExceptionType):
-        self.expectedExceptionType = expectedExceptionType
-        self.exceptionType = None
-        self.exceptionValue = None
-        self.tb = None
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exceptionType, exceptionValue, tb):
-        self.exceptionType = exceptionType
-        self.exceptionValue = exceptionValue
-        self.tb = tb
-        if exceptionType is None: raise AssertionError("No exception raised, %s expected." % self.expectedExceptionType)        # no error was raised
-        if issubclass(exceptionType, self.expectedExceptionType):
-            return True               # the correct error was raised
-        traceback.print_tb(tb)
-        raise AssertionError("%s raised. %s expected." % (exceptionType, self.expectedExceptionType) )
-
+@Pipeable
+def closeTo(a, b, tolerance=_EPS):
+    if abs(a) < tolerance:
+        return abs(b) < tolerance
+    else:
+        return abs(a - b) / abs(a) < tolerance
