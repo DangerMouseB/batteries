@@ -25,7 +25,7 @@ _EPS = 7.105427357601E-15      # i.e. double precision
 
 
 @Pipeable
-def assertEqual(actual, expected, suppressMsg=False, keepWS=False, tolerance=_EPS):
+def AssertEqual(actual, expected, suppressMsg=False, keepWS=False, returnResult=False, tolerance=_EPS):
     if keepWS:
         act = actual
         exp = expected
@@ -33,24 +33,29 @@ def assertEqual(actual, expected, suppressMsg=False, keepWS=False, tolerance=_EP
         act = actual.replace(" ", "").replace("\n", "") if isinstance(actual, (str,)) else actual
         exp = expected.replace(" ", "").replace("\n", "") if isinstance(expected, (str,)) else expected
     if isinstance(act, (int, float)) and isinstance(exp, (int, float)):
-        equal = act >> closeTo(tolerance=tolerance) >> exp
+        equal = act >> CloseTo(tolerance=tolerance) >> exp
     else:
         equal = act == exp
-    if equal:
-        return True
+    if returnResult:
+        return equal
     else:
-        if suppressMsg:
-            raise AssertionError()
+        if not equal:
+            if suppressMsg:
+                raise AssertionError()
+            else:
+                if isinstance(actual, (str,)):
+                    actual = '"' + actual + '"'
+                if isinstance(expected, (str,)):
+                    expected = '"' + expected + '"'
+                raise AssertionError('expected %s but got %s' % (expected, actual))
         else:
-            if isinstance(actual, (str,)):
-                actual = '"' + actual + '"'
-            if isinstance(expected, (str,)):
-                expected = '"' + expected + '"'
-            raise AssertionError('expected %s but got %s' % (expected, actual))
+            return None
+
 
 @Pipeable
-def closeTo(a, b, tolerance=_EPS):
+def CloseTo(a, b, tolerance=_EPS):
     if abs(a) < tolerance:
         return abs(b) < tolerance
     else:
         return abs(a - b) / abs(a) < tolerance
+

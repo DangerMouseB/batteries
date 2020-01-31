@@ -30,13 +30,12 @@ lhs << rhs   calls f(x) and answers the lhs
 See /tests/test_pipeable for a fuller description and code examples
 """
 
+from __future__ import annotations
 
 
+from typing import Any, Union
 import types, inspect, collections, sys
 from .missing import Missing
-
-
-__all__ = ['Pipeable', 'arg', 'args', 'kwargs', 'na']
 
 
 
@@ -99,7 +98,7 @@ class PipeableFunction(object):
         self._doc = doc
         self._fnRepr = fnRepr
 
-    def _copy(self):
+    def _copy(self) -> PipeableFunction:
         return PipeableFunction(
             self._fn,
             dict(self._coreBindings),
@@ -114,17 +113,17 @@ class PipeableFunction(object):
             self._fnRepr
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # for pretty display in pycharm debugger
         return 'Pipeable=>%s' % self._fnRepr
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Any:
         """Appends args and kwargs to the list of arguments for the function and returns the result"""
         if self._pipeOnly:
             raise TypeError('Cannot add arguments to %s using ()' % self._fn.__name__)
         return self._bind(*args, **kwargs)
 
-    def __rrshift__(self, lhs):
+    def __rrshift__(self, lhs: Any) -> Any:
         # lhs >> self
         """Appends LHS to the list of arguments for the function and returns the result"""
         if not self._leftToRight:
@@ -138,7 +137,7 @@ class PipeableFunction(object):
         else:
             return self._bind(lhs)
 
-    def __rshift__(self, rhs):
+    def __rshift__(self, rhs: Any) -> Any:
         # self >> rhs
         """Appends RHS to the list of arguments for the function and returns the result"""
         if isinstance(rhs, (PipeableFunction,)) and rhs._overrideLHS and rhs._leftToRight:
@@ -155,7 +154,7 @@ class PipeableFunction(object):
             else:
                 return self._bind(rhs)
 
-    def __rlshift__(self, lhs):
+    def __rlshift__(self, lhs: Any) -> Any:
         # lhs << self
         """Appends LHS to the list of arguments for the function and returns the LHS"""
         if not self._rightToLeft:
@@ -167,7 +166,7 @@ class PipeableFunction(object):
         self._bind(lhs)
         return lhs
 
-    def __lshift__(self, rhs):
+    def __lshift__(self, rhs: Any) -> Any:
         # self << rhs
         """Appends RHS to the list of arguments for the function and returns the LHS (i.e. self)"""
         if isinstance(rhs, (PipeableFunction,)) and rhs._overrideLHS and rhs._rightToLeft:
@@ -185,11 +184,11 @@ class PipeableFunction(object):
     def _bind(oldself, *args, **kwargs):
         self = oldself._copy()
 
-        availableCoreBindings = {k: v for (k, v) in self._coreBindings.items() if (isinstance(v, ELLIPSIS) or v is Missing)}
-        availableOptionalBindings = {k: v for (k, v) in self._optionalBindings.items() if(isinstance(v, ELLIPSIS) or v is Missing)}
+        availableCoreBindings = {k: v for (k, v) in self._coreBindings.items() if (isinstance(v, _ELLIPSIS) or v is Missing)}
+        availableOptionalBindings = {k: v for (k, v) in self._optionalBindings.items() if(isinstance(v, _ELLIPSIS) or v is Missing)}
 
         def filterAndSort(bindingItems):
-            bindingItems = [(k,v) for (k,v) in bindingItems if isinstance(v, ELLIPSIS)]
+            bindingItems = [(k,v) for (k,v) in bindingItems if isinstance(v, _ELLIPSIS)]
             bindingItems.sort(key=lambda x: x[1].id)
             return bindingItems
         coreBindingsWithEllipsis = filterAndSort(availableCoreBindings.items())
@@ -203,12 +202,12 @@ class PipeableFunction(object):
         while args:
             arg = args[0]
             if arg is ...:
-                arg = ADDING_ELLIPSIS()
+                arg = _ADDING_ELLIPSIS()
                 addedArgEllipsis = True
             elif arg is na:
                 arg = Missing
             if checkForEllipsis:
-                # fill the ELLIPSIS first
+                # fill the _ELLIPSIS first
                 checkForEllipsis = False
                 if coreBindingsWithEllipsis:
                     name, v = coreBindingsWithEllipsis[0]
@@ -217,8 +216,8 @@ class PipeableFunction(object):
                     del coreBindingsWithEllipsis[0]
                     checkForEllipsis = True
                     args = args[1:]
-                    arg = PROCESSED
-                if arg is not PROCESSED:
+                    arg = _PROCESSED
+                if arg is not _PROCESSED:
                     if optionalBindingsWithEllipsis:
                         name, v = optionalBindingsWithEllipsis[0]
                         self._optionalBindings[name] = arg
@@ -226,11 +225,11 @@ class PipeableFunction(object):
                         del optionalBindingsWithEllipsis[0]
                         checkForEllipsis = True
                         args = args[1:]
-                        arg = PROCESSED
-                if arg is PROCESSED:
+                        arg = _PROCESSED
+                if arg is _PROCESSED:
                     continue
             if checkForMissing:
-                # once the ELLIPSIS have been exhausted fill the Missing
+                # once the _ELLIPSIS have been exhausted fill the Missing
                 checkForMissing = False
                 for name, v in availableCoreBindings.items():
                     if v is Missing:
@@ -238,36 +237,36 @@ class PipeableFunction(object):
                         del availableCoreBindings[name]
                         checkForMissing = True
                         args = args[1:]
-                        arg = PROCESSED
+                        arg = _PROCESSED
                         break
-                if arg is not PROCESSED:
+                if arg is not _PROCESSED:
                     for name, v in availableOptionalBindings.items():
                         if v is Missing:
                             self._optionalBindings[name] = arg
                             del availableOptionalBindings[name]
                             checkForMissing = True
                             args = args[1:]
-                            arg = PROCESSED
+                            arg = _PROCESSED
                             break
-                if arg is PROCESSED:
+                if arg is _PROCESSED:
                     continue
-            if arg is not PROCESSED:
+            if arg is not _PROCESSED:
                 raise TypeError('Number of args passed in > number of unbound parameters')
 
         # process each kwarg finding it a home
         for name, arg in kwargs.items():
             if arg is ...:
-                arg = ADDING_ELLIPSIS()
+                arg = _ADDING_ELLIPSIS()
                 addedKwargEllipsis = True
             if name in availableCoreBindings:
                 coreValue = availableCoreBindings[name]
-                if isinstance(coreValue, ELLIPSIS) or coreValue is Missing:
+                if isinstance(coreValue, _ELLIPSIS) or coreValue is Missing:
                     self._coreBindings[name] = arg
                     del availableCoreBindings[name]
                     continue
             if name in availableOptionalBindings:
                 optionalValue = availableOptionalBindings[name]
-                if isinstance(optionalValue, ELLIPSIS) or optionalValue is Missing:
+                if isinstance(optionalValue, _ELLIPSIS) or optionalValue is Missing:
                     self._optionalBindings[name] = arg
                     del availableOptionalBindings[name]
                     continue
@@ -283,11 +282,11 @@ class PipeableFunction(object):
 
         if addedArgEllipsis or addedKwargEllipsis:
             for name, arg in self._coreBindings.items():
-                if isinstance(arg, ADDING_ELLIPSIS):
-                    self._coreBindings[name] = ELLIPSIS(arg.id)
+                if isinstance(arg, _ADDING_ELLIPSIS):
+                    self._coreBindings[name] = _ELLIPSIS(arg.id)
             for name, arg in self._optionalBindings.items():
-                if isinstance(arg, ADDING_ELLIPSIS):
-                    self._optionalBindings[name] = ELLIPSIS(arg.id)
+                if isinstance(arg, _ADDING_ELLIPSIS):
+                    self._optionalBindings[name] = _ELLIPSIS(arg.id)
 
         self._numAvailableCoreBindings = len(availableCoreBindings) 
         if not (addedArgEllipsis or addedKwargEllipsis) and self._numAvailableCoreBindings == 0:
@@ -312,17 +311,17 @@ class _Kwargs(object):
         self.kwargs = kwargs
 
 
-def arg(arg):
+def arg(arg) -> _Arg:
     return _Arg(arg)
 
 @Pipeable(overrideLHS=True)
-def args(args):
+def args(args) -> _Args:
     if not hasattr(args, '__iter__'):
         raise TypeError('The argument to args must be iterable')
     return _Args(args)
 
 @Pipeable(overrideLHS=True)
-def kwargs(kwargs):
+def kwargs(kwargs) -> _Kwargs:
     if not isinstance(kwargs, collections.abc.Mapping):
         raise TypeError('The argument to kwargs must be a mapping')
     return _Kwargs(kwargs)
@@ -341,31 +340,31 @@ na = sys._NA
 
 
 _ellipsisSeed = 0
-class ADDING_ELLIPSIS(object):
+class _ADDING_ELLIPSIS(object):
     def __init__(self):
         global _ellipsisSeed
         _ellipsisSeed += 1
         self.id = _ellipsisSeed
     # def __str__(self):
-    #     return 'ADDING_ELLIPSIS'
+    #     return '_ADDING_ELLIPSIS'
     def __repr__(self):
         # for pretty display in pycharm debugger
-        return 'ADDING_ELLIPSIS(%s)' % self.id
+        return '_ADDING_ELLIPSIS(%s)' % self.id
 
-class ELLIPSIS(object):
+class _ELLIPSIS(object):
     def __init__(self, id):
         self.id = id
     def __repr__(self):
         # for pretty display in pycharm debugger
-        return 'ELLIPSIS(%s)' % self.id
+        return '_ELLIPSIS(%s)' % self.id
 
 if not hasattr(sys, '_PROCESSED'):
     class _PROCESSED(object):
         # def __str__(self):
-        #     return 'PROCESSED'
+        #     return '_PROCESSED'
         def __repr__(self):
             # for pretty display in pycharm debugger
-            return 'PROCESSED'
+            return '_PROCESSED'
     sys._PROCESSED = _PROCESSED()
-PROCESSED = sys._PROCESSED
+_PROCESSED = sys._PROCESSED
 

@@ -16,13 +16,57 @@
 #
 #*******************************************************************************
 
+_all = set(['Missing'])
+
+import inspect
+
+def _getAll(module):
+    names = ['batteries.pipeable', module.__name__]
+    members = [(name, o) for (name, o) in inspect.getmembers(module) if (name[0:1] != '_')]
+    members = [(name, o) for (name, o) in members if not (inspect.isbuiltin(o) or inspect.ismodule(o))]
+    members = [(name, o) for (name, o) in members if (o.__module__ in names)]
+    return [name for (name, o) in members]
+
 
 from .missing import Missing
+
+# the following are wrapped in exception handlers to make testing and debugging easier
+
 try:
-    from .pipeable import *       # wrapped in an exception handler to make testing and debugging easier
+    from . import _testing
+    from ._testing import *
+    _all.update(_getAll(_testing))
 except:
     pass
+
 try:
-    from .useful import *       # wrapped in an exception handler to make testing and debugging easier
+    from . import pipeable
+    from .pipeable import *
+    _all.update(_getAll(pipeable))
 except:
     pass
+
+try:
+    from . import useful
+    from .useful import *
+    _all.update(_getAll(useful))
+except:
+    pass
+
+try:
+    from . import ranges
+    from .ranges import *
+    _all.update(_getAll(ranges))
+except:
+    pass
+
+try:
+    from . import testing
+    from .testing import *
+    _all.update(_getAll(testing))
+except:
+    pass
+
+_all =list(_all)
+_all.sort()
+__all__ = _all

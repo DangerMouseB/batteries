@@ -1,6 +1,6 @@
 #*******************************************************************************
 #
-#    Copyright (c) 2017-2020 David Briant
+#    Copyright (c) 2019-2020 David Briant
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -18,32 +18,37 @@
 
 
 
-from ..testing import assertEqual
+from ..testing import AssertEqual
 from ..pipeable import Pipeable
-from ..useful import Chain, Each, EachArgs
+from ..ranges import IndexableFR, ListOR, ChainRanges
 
-def test_stuff():
-    2 >> assertEqual >> 2
 
-    @Pipeable
-    def SquareIt(x):
-        return x * x
+def test_listRanges():
+    r = IndexableFR([1,2,3])
+    o = ListOR([])
+    while not r.empty:
+        o.put(r.front)
+        r.popFront()
+    r.l >> AssertEqual >> o.list
 
-    @Pipeable
-    def Add(x, y):
-        return x + y
-
-    [1,2,3] >> Each >> SquareIt >> Chain(seed=0) >> Add >> AssertEqual >> 14
-
-    [[1,2], [2,3], [3,4]] >> EachArgs >> Add >> AssertEqual >> [3, 5, 7]
-
+def test_rangeOrRanges():
+    rOfR = [] >> ChainRanges
+    [e for e in rOfR] >> AssertEqual >> []
+    rOfR = (IndexableFR([]), IndexableFR([])) >> ChainRanges
+    [e for e in rOfR] >> AssertEqual >> []
+    rOfR = (IndexableFR([1]), IndexableFR([2])) >> ChainRanges
+    [e for e in rOfR] >> AssertEqual >> [1,2]
 
 
 def main():
-    test_stuff()
+    test_listRanges()
+    test_rangeOrRanges()
     print('pass')
 
 
 if __name__ == '__main__':
     main()
+
+
+
 
