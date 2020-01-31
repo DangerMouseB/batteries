@@ -44,3 +44,8 @@ assert actual == expected
 ```
 
 See batteries/tests/test_pipeable.py for a fuller description and example code.
+
+#### D style ranges
+
+See batteries/examples/format_calendar.py and batteries/examples/tests/test_format_calendar.py
+
