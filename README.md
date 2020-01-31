@@ -1,9 +1,9 @@
 ### Batteries
 
 
-#### Pipeable
+#### pipeable
 
-This decorator extends functions with the >> and << opertors with the effect of adding pipeline like behaviour (e.g. similar to |> in F#).
+This Pipeable decorator extends functions with the >> and << opertors with the effect of adding pipeline like behaviour (e.g. similar to |> in F#).
 
 x >> f   and   f >> x   both answer f(x)\
 x << f   calls f(x) and answers x\
