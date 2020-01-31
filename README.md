@@ -19,26 +19,26 @@ Example:
 from batteries import Pipeable
 
 @Pipeable
-def each(xs, f):
+def Each(xs, f):
     return [f(x) for x in xs]
 
 @Pipeable
-def chain(seed, xs, f):
+def Chain(seed, xs, f):
     prior = seed
     for x in xs:
         prior = f(prior, x)
     return prior
 
 @Pipeable
-def squareIt(x):
+def SquareIt(x):
     return x * x
 
 @Pipeable
-def add(x, y):
+def Add(x, y):
     return x + y
 
 
-actual = [1,2,3] >> each >> squareIt >> chain(seed=0) >> add
+actual = [1,2,3] >> Each >> SquareIt >> Chain(seed=0) >> Add
 expected = 14
 assert actual == expected
 ```
