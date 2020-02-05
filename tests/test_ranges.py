@@ -20,7 +20,7 @@
 
 from ..testing import AssertEqual
 from ..pipeable import Pipeable
-from ..ranges import IndexableFR, ListOR, ChainRanges
+from ..ranges import IndexableFR, ListOR, ChainAsSingleRange
 
 
 def test_listRanges():
@@ -32,11 +32,11 @@ def test_listRanges():
     r.l >> AssertEqual >> o.list
 
 def test_rangeOrRanges():
-    rOfR = [] >> ChainRanges
+    rOfR = [] >> ChainAsSingleRange
     [e for e in rOfR] >> AssertEqual >> []
-    rOfR = (IndexableFR([]), IndexableFR([])) >> ChainRanges
+    rOfR = (IndexableFR([]), IndexableFR([])) >> ChainAsSingleRange
     [e for e in rOfR] >> AssertEqual >> []
-    rOfR = (IndexableFR([1]), IndexableFR([2])) >> ChainRanges
+    rOfR = (IndexableFR([1]), IndexableFR([2])) >> ChainAsSingleRange
     [e for e in rOfR] >> AssertEqual >> [1,2]
 
 

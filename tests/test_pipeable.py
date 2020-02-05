@@ -130,7 +130,13 @@ def overview():
     assert 2 << joe == 2
     assert joe << 2 is joe
 
+    # can also wrap classes - the init method is parsed and when there are enough args an object is constructed
+    @Pipeable
+    class Fred(object):
+        def __init__(self, n):
+            self.n = n
 
+    assert getattr(1 >> Fred, 'n') == 1
 
 
 def main():

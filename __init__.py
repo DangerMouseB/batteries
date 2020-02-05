@@ -16,9 +16,9 @@
 #
 #*******************************************************************************
 
-_all = set(['Missing'])
+_all = set(['Missing', 'null'])
 
-import inspect
+import inspect, sys
 
 def _getAll(module):
     names = ['batteries.pipeable', module.__name__]
@@ -29,6 +29,16 @@ def _getAll(module):
 
 
 from .missing import Missing
+
+if not hasattr(sys, '_NULL'):
+    class _NULL(object):
+        # def __str__(self):
+        #     return 'na'
+        def __repr__(self):
+            # for pretty display in pycharm debugger
+            return 'null'
+    sys._NULL = _NULL()
+nill = sys._NULL
 
 # the following are wrapped in exception handlers to make testing and debugging easier
 

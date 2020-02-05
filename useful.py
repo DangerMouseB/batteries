@@ -243,3 +243,7 @@ def _printLen(x):
 LL = _callFReturnX(_printLen)
 
 
+
+@Pipeable
+def GetAttr(x, name):
+    return getattr(x, name)

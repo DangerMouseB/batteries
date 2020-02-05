@@ -53,9 +53,9 @@ class IInputRange(object):
     @property
     def front(self) -> Any:
         raise NotImplementedError()
-    def moveFront(self) -> Any:
-        raise NotImplementedError()
     def popFront(self) -> None:
+        raise NotImplementedError()
+    def moveFront(self) -> Any:
         raise NotImplementedError()
 
     # assignable
@@ -67,19 +67,18 @@ class IInputRange(object):
     # this is convenient but possibly too convenient and it may muddy things hence the ugly name
     @property
     def _GetIter(self):
-        return IInputRange._IterDelegator(self)
+        return IInputRange._Iter(self)
 
-    class _IterDelegator(object):
+    class _Iter(object):
         def __init__(self, r):
             self.r = r
         def __iter__(self) -> IInputRange:
-            return self.r
-
-    def __next__(self) -> Any:
-        if self.empty: raise StopIteration
-        answer = self.front
-        self.popFront()
-        return answer
+            return self
+        def __next__(self) -> Any:
+            if self.r.empty: raise StopIteration
+            answer = self.r.front
+            self.r.popFront()
+            return answer
 
 
 class IForwardRange(IInputRange):
@@ -158,10 +157,7 @@ class FnAdapterFRange(IForwardRange):
 
 
 @Pipeable
-def ChunkUsing(r, f):
-    return _ChunkUsingFR(r, f)
-
-class _ChunkUsingFR(IForwardRange):
+class ChunkFROnChangeOf(IForwardRange):
     def __init__(self, r, f):
         assert isinstance(r, IForwardRange)
         self.r = r
@@ -181,9 +177,9 @@ class _ChunkUsingFR(IForwardRange):
         if not self.r.empty:
             self.lastF = self.f(self.r.front)
     def save(self):
-        return _ChunkUsingFR(self.r.save(), self.f)
+        return ChunkFROnChangeOf(self.r.save(), self.f)
     def __repr__(self):
-        return '_ChunkUsingFR(%s,%s)' % (self.r, self.curF)
+        return 'ChunkFROnChangeOf(%s,%s)' % (self.r, self.curF)
 
 class _Chunk(IForwardRange):
     def __init__(self, r, f, curF):
@@ -206,10 +202,7 @@ class _Chunk(IForwardRange):
 
 
 @Pipeable
-def Until(f, r):
-    return _Until(r, f)
-
-class _Until(IForwardRange):
+class Until(IForwardRange):
     def __init__(self, r, f):
         if not isinstance(r, IForwardRange):
             raise TypeError(str(r))
@@ -229,17 +222,14 @@ class _Until(IForwardRange):
         self.r.popFront()
 
     def save(self):
-        return _Until(self.r.save(), self.f)
+        return Until(self.r.save(), self.f)
     def __repr__(self):
-        return '_Until(%s,%s)' % (self.r, self.f)
+        return 'Until(%s,%s)' % (self.r, self.f)
 
 
 @Pipeable
-def ChunkUsingSubRangeGenerator(f, r):
-    return _ChunkUsingSubRangeGenerator(r, f)
-
-class _ChunkUsingSubRangeGenerator(IForwardRange):
-    def __init__(self, r, f):
+class ChunkUsingSubRangeGenerator(IForwardRange):
+    def __init__(self, f, r):
         self.r = r
         self.f = f
         self.curSR = None if self.r.empty else self.f(self.r)
@@ -254,16 +244,13 @@ class _ChunkUsingSubRangeGenerator(IForwardRange):
         self.curSR = None if self.r.empty else self.f(self.r)
 
     def save(self) -> IForwardRange:
-        new = _ChunkUsingSubRangeGenerator(self.r.save(), self.f)
+        new = ChunkUsingSubRangeGenerator(self.f, self.r.save())
         new.curSR = None if self.curSR is None else self.curSR.save()
         return new
 
 
 @Pipeable
-def IndexableFR(indexable):
-    return _IndexableForwardRange(indexable)
-
-class _IndexableForwardRange(IForwardRange):
+class IndexableFR(IForwardRange):
     def __init__(self, indexable):
         self.indexable = indexable
         self.i= 0
@@ -276,16 +263,13 @@ class _IndexableForwardRange(IForwardRange):
     def popFront(self):
         self.i += 1
     def save(self):
-        new = _IndexableForwardRange(self.indexable.__class__(self.indexable))
+        new = IndexableFR(self.indexable.__class__(self.indexable))
         new.i = self.i
         return new
 
 
 @Pipeable
-def ListOR(l):
-    return _ListOutputRange(l)
-
-class _ListOutputRange(IOutputRange):
+class ListOR(IOutputRange):
     def __init__(self, list):
         self.list = list
     def put(self, value):
@@ -293,10 +277,7 @@ class _ListOutputRange(IOutputRange):
 
 
 @Pipeable
-def ChainRanges(listOfRanges):
-    return _RangeOfRanges(listOfRanges)
-
-class _RangeOfRanges(IForwardRange):
+class ChainAsSingleRange(IForwardRange):
     def __init__(self, listOfRanges):
         self.rOfR = listOfRanges >> IndexableFR
         if self.rOfR.empty:
@@ -327,6 +308,10 @@ def Find(r, value):
             break
         r.popFront()
     return r
+
+@Pipeable
+def Put(r, x):
+    return r.put(x)
 
 @Pipeable
 def Front(r):
@@ -380,9 +365,7 @@ class _MaterialisedRange(list):
 
 # RMap rather than Map to make explicit that it is unrelated to python's map
 @Pipeable
-def RMap(r, f):
-    return _RMap(r, f)
-class _RMap(IForwardRange):
+class RMap(IForwardRange):
     def __init__(self, r, f):
         self.r = r
         self.f = f
@@ -395,7 +378,7 @@ class _RMap(IForwardRange):
     def popFront(self):
         self.r.popFront()
     def save(self):
-        return _RMap(self.r.save(), self.f)
+        return RMap(self.r.save(), self.f)
 
 
 @Pipeable
@@ -442,4 +425,30 @@ def PullFrom(inR, outR):
         outR.put(inR.front)
         inR.popFront()
     return None
+
+
+@Pipeable
+class FileLineIR(IInputRange):
+    def __init__(self, f, stripNL=False):
+        self.f = f
+        self.line = self.f.readline()
+    @property
+    def empty(self):
+        return self.line == ''
+    @property
+    def front(self):
+        return self.line
+    def popFront(self):
+        self.line = self.f.readline()
+
+
+@Pipeable
+def AllSubRangesExhausted(ror):
+    ror = ror.save()
+    answer = True
+    while not ror.empty:
+        if not ror.front.empty:
+            answer = False
+            break
+    return answer
 

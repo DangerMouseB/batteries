@@ -47,12 +47,18 @@ def Pipeable(*args, overrideLHS=False, pipeOnly=False, leftToRight=Missing, righ
     leftToRight = not rightToLeft if leftToRight is Missing else leftToRight
     rightToLeft = not leftToRight if rightToLeft is Missing else rightToLeft
 
-    def _DecorateWithPF(fn):
+    def _DecorateWithPF(fnOrClass):
         coreBindings = {}
         optionalBindings = {}
         optionalBindingsReprs = []
         hasKwargs = False
-        for name, parameter in inspect.signature(fn).parameters.items():
+        if isinstance(fnOrClass, type):
+            parameters = dict(inspect.signature(fnOrClass.__init__).parameters)
+            selfName = list(parameters.keys())[0]
+            del parameters[selfName]
+        else:
+            parameters = inspect.signature(fnOrClass).parameters
+        for name, parameter in parameters.items():
             if parameter.kind == inspect.Parameter.VAR_POSITIONAL:
                 raise TypeError('Function must not include *%s' % name)
             elif parameter.kind == inspect.Parameter.VAR_KEYWORD:
@@ -64,16 +70,16 @@ def Pipeable(*args, overrideLHS=False, pipeOnly=False, leftToRight=Missing, righ
                 else:
                     optionalBindings[name] = Missing
                     optionalBindingsReprs.append('%s=%s' % (name, parameter.default))
-        doc = fn.__doc__ if hasattr(fn, '__doc__') else ''
-        fnRepr = '%s(%s)' % (fn.__name__, ', '.join(list(coreBindings.keys()) + optionalBindingsReprs))
-        answer = PipeableFunction(fn, coreBindings, len(coreBindings), optionalBindings, hasKwargs, overrideLHS, pipeOnly, leftToRight, rightToLeft, doc, fnRepr)
+        doc = fnOrClass.__doc__ if hasattr(fnOrClass, '__doc__') else ''
+        fnRepr = '%s(%s)' % (fnOrClass.__name__, ', '.join(list(coreBindings.keys()) + optionalBindingsReprs))
+        answer = PipeableFunction(fnOrClass, coreBindings, len(coreBindings), optionalBindings, hasKwargs, overrideLHS, pipeOnly, leftToRight, rightToLeft, doc, fnRepr)
         return answer
 
-    if len(args) == 1 and isinstance(args[0], (types.FunctionType, types.MethodType)):
-        # decorated as @Pipeable so args[0] is the function being wrapped
+    if len(args) == 1 and isinstance(args[0], (types.FunctionType, types.MethodType, type)):
+        # of form @Pipeable so args[0] is the function or class being decorated
         return _DecorateWithPF(args[0])
     else:
-        # decorated as @Pipeable() or @Pipeable(overrideLHS=True) etc
+        # of form as @Pipeable() or @Pipeable(overrideLHS=True) etc
         return _DecorateWithPF
 
 
@@ -81,12 +87,12 @@ class PipeableFunction(object):
     # PipeableFunction accumulates arguments via () ,<< or >>
     # when it has enough arguments it calls the wrapped function
     __slots__ = [
-        '_fn', '_hasKwargs', '_overrideLHS', '_pipeOnly', '_leftToRight', '_rightToLeft',
+        '_fnOrClass', '_hasKwargs', '_overrideLHS', '_pipeOnly', '_leftToRight', '_rightToLeft',
         '_doc', '_coreBindings', '_optionalBindings', '_fnRepr', '_numAvailableCoreBindings'
     ]
 
     def __init__(self, fn, coreBindings, numAvailableCoreBindings, optionalBindings, hasKwargs, overrideLHS, pipeOnly, leftToRight, rightToLeft, doc, fnRepr):
-        self._fn = fn
+        self._fnOrClass = fn
         self._coreBindings = coreBindings
         self._numAvailableCoreBindings = numAvailableCoreBindings
         self._optionalBindings = optionalBindings
@@ -100,7 +106,7 @@ class PipeableFunction(object):
 
     def _copy(self) -> PipeableFunction:
         return PipeableFunction(
-            self._fn,
+            self._fnOrClass,
             dict(self._coreBindings),
             self._numAvailableCoreBindings, 
             dict(self._optionalBindings),
@@ -120,14 +126,14 @@ class PipeableFunction(object):
     def __call__(self, *args, **kwargs) -> Any:
         """Appends args and kwargs to the list of arguments for the function and returns the result"""
         if self._pipeOnly:
-            raise TypeError('Cannot add arguments to %s using ()' % self._fn.__name__)
+            raise TypeError('Cannot add arguments to %s using ()' % self._fnOrClass.__name__)
         return self._bind(*args, **kwargs)
 
     def __rrshift__(self, lhs: Any) -> Any:
         # lhs >> self
         """Appends LHS to the list of arguments for the function and returns the result"""
         if not self._leftToRight:
-            raise TypeError('Cannot add arguments to %s with >>' % self._fn.__name__)
+            raise TypeError('Cannot add arguments to %s with >>' % self._fnOrClass.__name__)
         if isinstance(lhs, _Arg):
             return self._bind(lhs.arg)
         elif isinstance(lhs, _Args):
@@ -144,7 +150,7 @@ class PipeableFunction(object):
             return rhs.__rrshift__(self)
         else:
             if not self._leftToRight:
-                raise TypeError('Cannot add arguments to %s with >>' % self._fn.__name__)
+                raise TypeError('Cannot add arguments to %s with >>' % self._fnOrClass.__name__)
             if isinstance(rhs, _Arg):
                 return self._bind(rhs.arg)
             elif isinstance(rhs, _Args):
@@ -158,11 +164,11 @@ class PipeableFunction(object):
         # lhs << self
         """Appends LHS to the list of arguments for the function and returns the LHS"""
         if not self._rightToLeft:
-            raise TypeError('Cannot add arguments to %s with <<' % self._fn.__name__)
+            raise TypeError('Cannot add arguments to %s with <<' % self._fnOrClass.__name__)
         if self._numAvailableCoreBindings != 1:
             raise TypeError(
                 'Can only call %s with << when there is only one available core binding. Currently there are %s' % (
-                self._fn.__name__, self._numAvailableCoreBindings))
+                self._fnOrClass.__name__, self._numAvailableCoreBindings))
         self._bind(lhs)
         return lhs
 
@@ -173,11 +179,11 @@ class PipeableFunction(object):
             return rhs.__rrshift__(self)
         else:
             if not self._rightToLeft:
-                raise TypeError('Cannot add arguments to %s with <<' % self._fn.__name__)
+                raise TypeError('Cannot add arguments to %s with <<' % self._fnOrClass.__name__)
             if self._numAvailableCoreBindings != 1:
                 raise TypeError(
                     'Can only call %s with << when there is only one available core binding. Current there are %s' % (
-                    self._fn.__name__, self._numAvailableCoreBindings))
+                    self._fnOrClass.__name__, self._numAvailableCoreBindings))
             self._bind(rhs)
             return self
 
@@ -290,7 +296,7 @@ class PipeableFunction(object):
 
         self._numAvailableCoreBindings = len(availableCoreBindings) 
         if not (addedArgEllipsis or addedKwargEllipsis) and self._numAvailableCoreBindings == 0:
-            return self._fn(
+            return self._fnOrClass(
                 *list(self._coreBindings.values()),
                 **{k:v for k,v in self._optionalBindings.items() if v is not Missing})
         else:

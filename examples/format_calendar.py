@@ -71,7 +71,7 @@ def _IthDateInYear(year, i):
 # ?byMonth
 @Pipeable
 def MonthChunks(datesR):
-    return datesR >> ChunkUsing >> (lambda x: x.month)
+    return datesR >> ChunkFROnChangeOf >> (lambda x: x.month)
 
 
 # ?byWeek
@@ -88,9 +88,7 @@ def DateAsDayString(d):
 
 # ?formatWeek
 @Pipeable
-def WeekStrings(r):
-    return _WeekStrings(r)
-class _WeekStrings(IForwardRange):
+class WeekStrings(IForwardRange):
     def __init__(self, rOfWeeks):
         self.rOfWeeks = rOfWeeks
 
@@ -128,8 +126,40 @@ def MonthLines(monthDays):
     return [
         MonthTitle(monthDays.front.month, 21) >> WrapInList >> IndexableFR,
         monthDays >> WeekChunks >> WeekStrings
-    ] >> ChainRanges
+    ] >> ChainAsSingleRange
 
+
+@Pipeable
+class RaggedZip(IInputRange):
+    def __init__(self, ror):
+        self.ror = ror
+        self.allEmpty = ror >> AllSubRangesExhausted
+    @property
+    def empty(self):
+        return self.allEmpty
+    @property
+    def front(self) -> list:
+        parts = []
+        ror = self.ror.save()
+        while not ror.empty:
+            subrange = ror.front
+            if subrange.empty:
+                parts.append(null)
+            else:
+                parts.append(subrange.front)
+            if not subrange.empty:
+                subrange.popFront()
+        return parts
+    def popFront(self):
+        ror = self.ror.save()
+        self.allEmpty = True
+        while not ror.empty:
+            subrange = ror.front
+            if not subrange.empty:
+                subrange.popFront()
+                if not subrange.empty:
+                    self.allEmpty = False
+            ror.popFront()
 
 
 

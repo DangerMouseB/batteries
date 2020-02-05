@@ -128,14 +128,6 @@ def test_MonthTitle():
 
 
 def test_oneMonthsOutput():
-    expectedJan2020 = [
-        '       January       ',
-        '        1  2  3  4  5',
-        '  6  7  8  9 10 11 12',
-        ' 13 14 15 16 17 18 19',
-        ' 20 21 22 23 24 25 26',
-        ' 27 28 29 30 31      ',
-    ]
     [
         1 >> MonthTitle(width=21) >> WrapInList >> IndexableFR,
         2020 >> DatesInYear
@@ -143,14 +135,44 @@ def test_oneMonthsOutput():
             >> Front
             >> WeekChunks
             >> WeekStrings
-    ] >> ChainRanges \
-        >> Materialise >> AssertEqual >> expectedJan2020
+    ] >> ChainAsSingleRange \
+        >> Materialise >> AssertEqual >> Jan2020TitleAndDateLines
 
     2020 >> DatesInYear \
         >> MonthChunks \
         >> Front \
         >> MonthLines \
-        >> Materialise >> AssertEqual >> expectedJan2020
+        >> Materialise >> AssertEqual >> Jan2020TitleAndDateLines
+
+
+def test_firstQuarter():
+    2020 >> DatesInYear \
+        >> MonthChunks \
+        >> RTake(3) \
+        >> RaggedZip \
+        >> Map
+
+
+
+Jan2020DateLines = [
+    '        1  2  3  4  5',
+    '  6  7  8  9 10 11 12',
+    ' 13 14 15 16 17 18 19',
+    ' 20 21 22 23 24 25 26',
+    ' 27 28 29 30 31      ',
+]
+
+Jan2020TitleAndDateLines = ['       January       '] + Jan2020DateLines
+
+Q1_2013TitleAndDateLines = [
+    "       January              February                March        ",
+    "        1  2  3  4  5                  1  2                  1  2",
+    "  6  7  8  9 10 11 12   3  4  5  6  7  8  9   3  4  5  6  7  8  9",
+    " 13 14 15 16 17 18 19  10 11 12 13 14 15 16  10 11 12 13 14 15 16",
+    " 20 21 22 23 24 25 26  17 18 19 20 21 22 23  17 18 19 20 21 22 23",
+    " 27 28 29 30 31        24 25 26 27 28        24 25 26 27 28 29 30",
+    "                                             31                  "
+]
 
 
 if __name__ == '__main__':
