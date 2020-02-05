@@ -47,5 +47,5 @@ See batteries/tests/test_pipeable.py for a fuller description and example code.
 
 #### ranges
 
-An attempt of adding d style ranges to python. See batteries/examples/format_calendar.py and batteries/examples/tests/test_format_calendar.py
+D style ranges in python - see batteries/examples/format_calendar.py and batteries/examples/tests/test_format_calendar.py
 
