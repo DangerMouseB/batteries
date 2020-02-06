@@ -17,8 +17,8 @@
 #*******************************************************************************
 
 
-from batteries.examples.format_calendar import *
-from batteries.examples.format_calendar import _UntilWeekdayName
+from anotherworld.examples.format_calendar import *
+from anotherworld.examples.format_calendar import _UntilWeekdayName
 
 
 # see notes in format_calendar.py

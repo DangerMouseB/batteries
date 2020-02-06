@@ -18,7 +18,7 @@
 
 
 
-from batteries.pipeable import Pipeable
+from anotherworld.pipeable import Pipeable
 
 
 # conversions

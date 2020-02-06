@@ -49,7 +49,7 @@ except:
 
 try:
     from . import _std
-    from batteries._std import *
+    from anotherworld._std import *
     _all.update(_getPublicMembersOnly(_std))
 except:
     pass

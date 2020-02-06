@@ -24,7 +24,7 @@
 # the range r I'm not sure how one can claim it is functional.
 
 
-from batteries import *
+from anotherworld import *
 
 
 def countLinesTrad(f):

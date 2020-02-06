@@ -24,7 +24,7 @@
 
 from __future__ import annotations
 
-from batteries import Pipeable
+from anotherworld import Pipeable
 from typing import Any, Union
 import sys
 from ._core import Null

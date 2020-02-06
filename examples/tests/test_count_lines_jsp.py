@@ -17,7 +17,7 @@
 #*******************************************************************************
 
 
-from batteries.testing import AssertEqual
+from anotherworld.testing import AssertEqual
 from ..count_lines_jsp import countLinesJsp, countLinesTrad, countLinesRanges1, countLinesRanges2, countLinesRanges3
 
 
