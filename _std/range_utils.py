@@ -35,14 +35,8 @@ def PullFrom(inR, outR):
     return None
 
 @Pipeable
-def AllSubRangesExhausted(ror):
-    ror = ror.save()
-    answer = True
-    while not ror.empty:
-        if not ror.front.empty:
-            answer = False
-            break
-    return answer
+def RZip(r):
+    raise NotImplementedError()
 
 @Pipeable
 def RFold(r, f):
@@ -57,19 +51,19 @@ def RFilter(r, f):
     raise NotImplementedError()
 
 @Pipeable
-def RTake(x):
+def RTake(r, xn:
     raise NotImplementedError()
 
 @Pipeable
-def RTakeBack(x):
+def RTakeBack(r, n):
     raise NotImplementedError()
 
 @Pipeable
-def RDrop(x):
+def RDrop(r, n):
     raise NotImplementedError()
 
 @Pipeable
-def RDropBack(x):
+def RDropBack(r, n):
     raise NotImplementedError()
 
 @Pipeable

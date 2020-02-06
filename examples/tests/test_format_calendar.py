@@ -150,7 +150,7 @@ def test_firstQuarter():
     2020 >> DatesInYear \
         >> MonthChunks \
         >> RTake(3) \
-        >> RaggedZip >> RMap >> MonthStringsToCalendarRow(na, " "*21, " ")
+        >> RZipRagged >> RMap >> MonthStringsToCalendarRow(na, " "*21, " ")
 
 
 
