@@ -21,7 +21,7 @@ _all = set(['Missing', 'Null'])
 import sys
 
 def _getPublicMembersOnly(module):
-    names = ['batteries.pipeable', module.__name__]
+    names = ['anotherworld.pipeable', module.__name__]
     members = [(name, o) for (name, o) in inspect.getmembers(module) if (name[0:1] != '_')]
     members = [(name, o) for (name, o) in members if not (inspect.isbuiltin(o) or inspect.ismodule(o))]
     members = [(name, o) for (name, o) in members if (o.__module__ in names)]
@@ -31,7 +31,7 @@ def _getPublicMembersOnly(module):
 from ._core import Missing, Null
 
 
-# the following are wrapped in exception handlers to make testing and debugging of batteries easier
+# the following are wrapped in exception handlers to make testing and debugging of anotherworld easier
 
 try:
     from . import _testing
