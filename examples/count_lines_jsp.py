@@ -26,25 +26,23 @@
 
 from batteries import *
 
-null = ''
-
 
 def countLinesTrad(f):
     answer = []
 
     count = 0
-    firstLineOfGroup = null
+    firstLineOfGroup = Null
     line = f.readline()
-    while line != null:
-        if firstLineOfGroup == null or line != firstLineOfGroup:
-            if firstLineOfGroup != null:
+    while line != Null:
+        if firstLineOfGroup == Null or line != firstLineOfGroup:
+            if firstLineOfGroup != Null:
                 answer.append((firstLineOfGroup, count))
             count = 0
             firstLineOfGroup = line
         count += 1
         line = f.readline()
 
-    if (firstLineOfGroup != null):
+    if (firstLineOfGroup != Null):
         answer.append((firstLineOfGroup, count))
 
     return answer
@@ -56,17 +54,17 @@ def countLinesRanges1(f):
     out = ListOR([])
 
     count = 0
-    firstLineOfGroup = null
+    firstLineOfGroup = Null
     while not r.empty:
-        if firstLineOfGroup == null or r.front != firstLineOfGroup:
-            if firstLineOfGroup != null:
+        if firstLineOfGroup == Null or r.front != firstLineOfGroup:
+            if firstLineOfGroup != Null:
                 out >> Put >> (firstLineOfGroup, count)
             count = 0
             firstLineOfGroup = r.front
         count += 1
         r.popFront()
 
-    if firstLineOfGroup != null:
+    if firstLineOfGroup != Null:
         out >> Put >> (firstLineOfGroup, count)
 
     return out.list
@@ -129,11 +127,11 @@ def countLinesJsp(f):
     answer = []
 
     line = f.readline()
-    while line != null:
+    while line != Null:
         count = 0
         firstLineOfGroup = line
 
-        while line != null and line == firstLineOfGroup:
+        while line != Null and line == firstLineOfGroup:
             count += 1
             line = f.readline()
         answer.append((firstLineOfGroup, count))

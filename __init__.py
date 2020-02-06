@@ -16,11 +16,11 @@
 #
 #*******************************************************************************
 
-_all = set(['Missing', 'null'])
+_all = set(['Missing', 'Null'])
 
-import inspect, sys
+import sys
 
-def _getAll(module):
+def _getPublicMembersOnly(module):
     names = ['batteries.pipeable', module.__name__]
     members = [(name, o) for (name, o) in inspect.getmembers(module) if (name[0:1] != '_')]
     members = [(name, o) for (name, o) in members if not (inspect.isbuiltin(o) or inspect.ismodule(o))]
@@ -36,44 +36,44 @@ if not hasattr(sys, '_NULL'):
         #     return 'na'
         def __repr__(self):
             # for pretty display in pycharm debugger
-            return 'null'
+            return 'Null'
     sys._NULL = _NULL()
-nill = sys._NULL
+Null = sys._NULL
 
-# the following are wrapped in exception handlers to make testing and debugging easier
+# the following are wrapped in exception handlers to make testing and debugging of batteries easier
 
 try:
     from . import _testing
     from ._testing import *
-    _all.update(_getAll(_testing))
+    _all.update(_getPublicMembersOnly(_testing))
 except:
     pass
 
 try:
     from . import pipeable
     from .pipeable import *
-    _all.update(_getAll(pipeable))
+    _all.update(_getPublicMembersOnly(pipeable))
 except:
     pass
 
 try:
-    from . import useful
-    from .useful import *
-    _all.update(_getAll(useful))
+    from . import _std
+    from batteries._std import *
+    _all.update(_getPublicMembersOnly(_std))
 except:
     pass
 
 try:
     from . import ranges
     from .ranges import *
-    _all.update(_getAll(ranges))
+    _all.update(_getPublicMembersOnly(ranges))
 except:
     pass
 
 try:
     from . import testing
     from .testing import *
-    _all.update(_getAll(testing))
+    _all.update(_getPublicMembersOnly(testing))
 except:
     pass
 

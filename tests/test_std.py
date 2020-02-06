@@ -1,6 +1,6 @@
 #*******************************************************************************
 #
-#    Copyright (c) 2019-2020 David Briant
+#    Copyright (c) 2017-2020 David Briant
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -19,33 +19,31 @@
 
 
 from ..testing import AssertEqual
-from ..ranges import IndexableFR, ListOR, ChainAsSingleRange, GetIRIter
+from ..pipeable import Pipeable
+from batteries._std import Chain, Each, EachArgs
 
+def test_stuff():
+    2 >> AssertEqual >> 2
 
-def test_listRanges():
-    r = IndexableFR([1,2,3])
-    o = ListOR([])
-    while not r.empty:
-        o.put(r.front)
-        r.popFront()
-    r.indexable >> AssertEqual >> o.list
+    @Pipeable
+    def SquareIt(x):
+        return x * x
 
-def test_rangeOrRanges():
-    rOfR = [] >> ChainAsSingleRange
-    [e for e in rOfR >> GetIRIter] >> AssertEqual >> []
-    rOfR = (IndexableFR([]), IndexableFR([])) >> ChainAsSingleRange
-    [e for e in rOfR >> GetIRIter] >> AssertEqual >> []
-    rOfR = (IndexableFR([1]), IndexableFR([2])) >> ChainAsSingleRange
-    [e for e in rOfR >> GetIRIter] >> AssertEqual >> [1,2]
+    @Pipeable
+    def Add(x, y):
+        return x + y
+
+    [1,2,3] >> Each >> SquareIt >> Chain(seed=0) >> Add >> AssertEqual >> 14
+
+    [[1,2], [2,3], [3,4]] >> EachArgs >> Add >> AssertEqual >> [3, 5, 7]
+
 
 
 def main():
-    test_listRanges()
-    test_rangeOrRanges()
+    test_stuff()
     print('pass')
 
 
 if __name__ == '__main__':
     main()
-
 

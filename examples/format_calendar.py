@@ -56,7 +56,7 @@
 
 import datetime
 from batteries import *
-
+from batteries import Null
 
 # ?datesInYear
 @Pipeable
@@ -104,14 +104,14 @@ class WeekStrings(IForwardRange):
         preBlanks = ['   '] * startDay
         dayStrings = week >> RMap >> DateAsDayString >> Materialise
         postBlanks = ['   '] * (7 - ((dayStrings >> Len) + startDay))
-        return ''.join(preBlanks + dayStrings + postBlanks)
+        return (preBlanks + dayStrings + postBlanks) >> JoinUsing >> ''
 
     def popFront(self):
         self.rOfWeeks.popFront()
 
     def save(self):
         # TODO delete once we've debugged the underlying save issue
-        return _WeekStrings(self.rOfWeeks.save())
+        return WeekStrings(self.rOfWeeks.save())
 
 
 # ?monthTitle
@@ -129,6 +129,8 @@ def MonthLines(monthDays):
     ] >> ChainAsSingleRange
 
 
+# ?pasteBlocks
+# pasteBlocks is RaggedZip >> RMap >> MonthStringsCalendarRow(" "*21, " ")
 @Pipeable
 class RaggedZip(IInputRange):
     def __init__(self, ror):
@@ -144,7 +146,7 @@ class RaggedZip(IInputRange):
         while not ror.empty:
             subrange = ror.front
             if subrange.empty:
-                parts.append(null)
+                parts.append(Null)
             else:
                 parts.append(subrange.front)
             if not subrange.empty:
@@ -161,5 +163,7 @@ class RaggedZip(IInputRange):
                     self.allEmpty = False
             ror.popFront()
 
-
+@Pipeable
+def MonthStringsToCalendarRow(strings, blank, sep):
+    return strings >> ReplaceWith(Null, blank) >> JoinUsing(sep)
 

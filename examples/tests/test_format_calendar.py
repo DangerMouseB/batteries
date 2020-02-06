@@ -49,6 +49,7 @@ def main():
     test_WeekStrings()
     test_MonthTitle()
     test_oneMonthsOutput()
+    test_firstQuarter()
     print('pass')
 
 
@@ -57,7 +58,7 @@ def test_allDaysInYear():
     o = 2020 >> DatesInYear >> PushInto >> ListOR(actual)
     actual[0] >> AssertEqual >> datetime.date(2020, 1, 1)
     actual[-1] >> AssertEqual >> datetime.date(2020, 12, 31)
-    [e for e in 2020 >> DatesInYear >> GetIter] >> Len >> AssertEqual >> 366
+    [e for e in 2020 >> DatesInYear >> GetIRIter] >> Len >> AssertEqual >> 366
 
 
 def test_datesBetween():
@@ -82,7 +83,7 @@ def test_checkNumberOfDaysInEachMonth():
 
 def test__UntilWeekdayName():
     r = 2020 >> DatesInYear
-    dates = [d for d in r >> _UntilWeekdayName(weekdayName='Sun') >> GetIter]
+    dates = [d for d in r >> _UntilWeekdayName(weekdayName='Sun') >> GetIRIter]
     dates[-1] >> AssertEqual >> datetime.date(2020,1,5)   # the sunday
     r >> Front >> AssertEqual >> datetime.date(2020,1,6) # the monday
 
@@ -93,7 +94,7 @@ def test_WeekChunks():
     actual = []
     while not weeksR.empty:
         weekR = weeksR.front
-        actual.append([d >> Day for d in weekR >> GetIter])
+        actual.append([d >> Day for d in weekR >> GetIRIter])
         weeksR.popFront()
     actual >> AssertEqual >> [[16, 17, 18, 19], [20, 21, 22, 23, 24, 25, 26], [27, 28, 29]]
 
@@ -114,9 +115,9 @@ def test_WeekStrings():
         >> WeekStrings
     )
     weekStringsR2 = weekStringsR.save()
-    [ws for ws in weekStringsR >> GetIter] >> AssertEqual >> expectedJan2020
+    [ws for ws in weekStringsR >> GetIRIter] >> AssertEqual >> expectedJan2020
 
-    actual = [ws for ws in weekStringsR2 >> GetIter]
+    actual = [ws for ws in weekStringsR2 >> GetIRIter]
     if actual >> AssertEqual(returnResult=True) >> expectedJan2020 >> Not: "fix WeekStrings.save()" >> PP
 
 
@@ -138,19 +139,18 @@ def test_oneMonthsOutput():
     ] >> ChainAsSingleRange \
         >> Materialise >> AssertEqual >> Jan2020TitleAndDateLines
 
-    2020 >> DatesInYear \
-        >> MonthChunks \
-        >> Front \
-        >> MonthLines \
-        >> Materialise >> AssertEqual >> Jan2020TitleAndDateLines
+    # equivalently
+    AssertEqual(
+        Materialise(MonthLines(Front(MonthChunks(DatesInYear(2020))))),
+        Jan2020TitleAndDateLines
+    )
 
 
 def test_firstQuarter():
     2020 >> DatesInYear \
         >> MonthChunks \
         >> RTake(3) \
-        >> RaggedZip \
-        >> Map
+        >> RaggedZip >> RMap >> MonthStringsToCalendarRow(na, " "*21, " ")
 
 
 

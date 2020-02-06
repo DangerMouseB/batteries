@@ -29,16 +29,17 @@ from typing import Any, Union
 import sys
 
 
-class _EMPTY(object):
-    def __bool__(self):
-        return False
-    def __repr__(self):
-        # for pretty display in pycharm debugger
-        return 'EMPTY'
 
 if not hasattr(sys, '_EMPTY'):
+    class _EMPTY(object):
+        def __bool__(self):
+            return False
+
+        def __repr__(self):
+            # for pretty display in pycharm debugger
+            return 'EMPTY'
     sys._EMPTY = _EMPTY()
-EMPTY = sys._EMPTY
+_EMPTY = sys._EMPTY
 
 
 # empty - checks for end-of-input and fills a one-element buffer held inside the range object
@@ -66,7 +67,7 @@ class IInputRange(object):
     # python iterator interface
     # this is convenient but possibly too convenient and it may muddy things hence the ugly name
     @property
-    def _GetIter(self):
+    def _GetIRIter(self):
         return IInputRange._Iter(self)
 
     class _Iter(object):
@@ -79,6 +80,11 @@ class IInputRange(object):
             answer = self.r.front
             self.r.popFront()
             return answer
+
+@Pipeable(leftToRight=True, pipeOnly=True)
+def GetIRIter(r):
+    # the name is deliberately semi-ugly to discourge but not prevent
+    return r._GetIRIter
 
 
 class IForwardRange(IInputRange):
@@ -131,8 +137,8 @@ class IOutputRange(object):
 
 
 class FnAdapterFRange(IForwardRange):
-    # adpats a unary function (that takes a position index) into a forward range
-    Empty = EMPTY
+    # adapts a unary function (that takes a position index) into a forward range
+    Empty = _EMPTY
     def __init__(self, f):
         self.f = f
         self.i = 0
@@ -301,49 +307,6 @@ class ChainAsSingleRange(IForwardRange):
             self.curR.popFront()
 
 
-@Pipeable
-def Find(r, value):
-    while not r.empty:
-        if r.front == value:
-            break
-        r.popFront()
-    return r
-
-@Pipeable
-def Put(r, x):
-    return r.put(x)
-
-@Pipeable
-def Front(r):
-    return r.front
-
-@Pipeable
-def Back(r):
-    return r.back
-
-@Pipeable
-def Length(r):
-    return r.length
-
-@Pipeable
-def Empty(r):
-    return r.empty
-
-@Pipeable(rightToLeft=True, pipeOnly=True)
-def PopFront(r):
-    r.popFront()
-    return r
-
-@Pipeable(rightToLeft=True, pipeOnly=True)
-def PopBack(r):
-    r.popBack()
-    return r
-
-@Pipeable(leftToRight=True, pipeOnly=True)
-def GetIter(r):
-    # name is deliberately semi-ugly
-    return r._GetIter
-
 
 @Pipeable
 def Materialise(r):
@@ -381,50 +344,7 @@ class RMap(IForwardRange):
         return RMap(self.r.save(), self.f)
 
 
-@Pipeable
-def RFold(r, f):
-    raise NotImplementedError()
 
-
-@Pipeable
-def RFoldSeed(seed, r, f):
-    raise NotImplementedError()
-
-
-@Pipeable
-def RFilter(r, f):
-    raise NotImplementedError()
-
-@Pipeable
-def RTake(x):
-    raise NotImplementedError()
-
-@Pipeable
-def RTakeBack(x):
-    raise NotImplementedError()
-
-@Pipeable
-def RDrop(x):
-    raise NotImplementedError()
-
-@Pipeable
-def RDropBack(x):
-    raise NotImplementedError()
-
-
-@Pipeable(leftToRight=True, pipeOnly=True)
-def PushInto(inR, outR):
-    while not inR.empty:
-        outR.put(inR.front)
-        inR.popFront()
-    return outR
-
-@Pipeable(rightToLeft=True)
-def PullFrom(inR, outR):
-    while not inR.empty:
-        outR.put(inR.front)
-        inR.popFront()
-    return None
 
 
 @Pipeable
@@ -440,15 +360,4 @@ class FileLineIR(IInputRange):
         return self.line
     def popFront(self):
         self.line = self.f.readline()
-
-
-@Pipeable
-def AllSubRangesExhausted(ror):
-    ror = ror.save()
-    answer = True
-    while not ror.empty:
-        if not ror.front.empty:
-            answer = False
-            break
-    return answer
 

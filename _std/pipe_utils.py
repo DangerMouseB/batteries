@@ -18,32 +18,18 @@
 
 
 
-from ..testing import assertEqual
 from ..pipeable import Pipeable
-from ..useful import Chain, Each, EachArgs
 
-def test_stuff():
-    2 >> assertEqual >> 2
 
+# Composition - could be made more efficient
+
+@Pipeable(overrideLHS=True)
+def Compose(f1, f2):
     @Pipeable
-    def SquareIt(x):
-        return x * x
+    def _Composed(x):
+        return x >> f1 >> f2
+    return _Composed
 
-    @Pipeable
-    def Add(x, y):
-        return x + y
-
-    [1,2,3] >> Each >> SquareIt >> Chain(seed=0) >> Add >> AssertEqual >> 14
-
-    [[1,2], [2,3], [3,4]] >> EachArgs >> Add >> AssertEqual >> [3, 5, 7]
-
-
-
-def main():
-    test_stuff()
-    print('pass')
-
-
-if __name__ == '__main__':
-    main()
-
+@Pipeable(overrideLHS=True)
+def ComposeAll(f1, f2):
+    raise NotImplementedError()
