@@ -31,18 +31,18 @@ def countLinesTrad(f):
     answer = []
 
     count = 0
-    firstLineOfGroup = Null
+    firstLineOfGroup = ''
     line = f.readline()
-    while line != Null:
-        if firstLineOfGroup == Null or line != firstLineOfGroup:
-            if firstLineOfGroup != Null:
+    while line != '':
+        if firstLineOfGroup == '' or line != firstLineOfGroup:
+            if firstLineOfGroup != '':
                 answer.append((firstLineOfGroup, count))
             count = 0
             firstLineOfGroup = line
         count += 1
         line = f.readline()
 
-    if (firstLineOfGroup != Null):
+    if (firstLineOfGroup != ''):
         answer.append((firstLineOfGroup, count))
 
     return answer
@@ -54,17 +54,17 @@ def countLinesRanges1(f):
     out = ListOR([])
 
     count = 0
-    firstLineOfGroup = Null
+    firstLineOfGroup = ''
     while not r.empty:
-        if firstLineOfGroup == Null or r.front != firstLineOfGroup:
-            if firstLineOfGroup != Null:
+        if firstLineOfGroup == '' or r.front != firstLineOfGroup:
+            if firstLineOfGroup != '':
                 out >> Put >> (firstLineOfGroup, count)
             count = 0
             firstLineOfGroup = r.front
         count += 1
         r.popFront()
 
-    if firstLineOfGroup != Null:
+    if firstLineOfGroup != '':
         out >> Put >> (firstLineOfGroup, count)
 
     return out.list
@@ -127,11 +127,11 @@ def countLinesJsp(f):
     answer = []
 
     line = f.readline()
-    while line != Null:
+    while line != '':
         count = 0
         firstLineOfGroup = line
 
-        while line != Null and line == firstLineOfGroup:
+        while line != '' and line == firstLineOfGroup:
             count += 1
             line = f.readline()
         answer.append((firstLineOfGroup, count))
