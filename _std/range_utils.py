@@ -51,7 +51,7 @@ def RFilter(r, f):
     raise NotImplementedError()
 
 @Pipeable
-def RTake(r, xn:
+def RTake(r, n):
     raise NotImplementedError()
 
 @Pipeable

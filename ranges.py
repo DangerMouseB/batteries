@@ -343,7 +343,6 @@ class RMap(IForwardRange):
         return RMap(self.r.save(), self.f)
 
 
-
 @Pipeable
 class FileLineIR(IInputRange):
     def __init__(self, f, stripNL=False):
