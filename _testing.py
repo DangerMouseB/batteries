@@ -18,7 +18,7 @@
 
 
 import sys, traceback
-from .missing import Missing
+from ._core import Missing
 
 
 class HookStdout(object):

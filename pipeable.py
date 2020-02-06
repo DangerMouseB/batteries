@@ -35,7 +35,7 @@ from __future__ import annotations
 
 from typing import Any, Union
 import types, inspect, collections, sys
-from .missing import Missing
+from ._core import Missing
 
 
 

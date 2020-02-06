@@ -28,17 +28,8 @@ def _getPublicMembersOnly(module):
     return [name for (name, o) in members]
 
 
-from .missing import Missing
+from ._core import Missing, Null
 
-if not hasattr(sys, '_NULL'):
-    class _NULL(object):
-        # def __str__(self):
-        #     return 'na'
-        def __repr__(self):
-            # for pretty display in pycharm debugger
-            return 'Null'
-    sys._NULL = _NULL()
-Null = sys._NULL
 
 # the following are wrapped in exception handlers to make testing and debugging of batteries easier
 

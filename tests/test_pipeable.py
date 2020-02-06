@@ -19,7 +19,7 @@
 
 
 from ..pipeable import Pipeable, arg, args, kwargs, na
-from ..missing import Missing
+from .._core import Missing
 from .._testing import AssertRaises
 import numpy as np
 

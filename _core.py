@@ -19,7 +19,6 @@
 
 import sys
 
-
 if not hasattr(sys, '_Missing'):
     class _Missing(object):
         def __bool__(self):
@@ -29,4 +28,15 @@ if not hasattr(sys, '_Missing'):
             return 'Missing'
     sys._Missing = _Missing()
 Missing = sys._Missing
+
+
+if not hasattr(sys, '_NULL'):
+    class _NULL(object):
+        # def __str__(self):
+        #     return 'na'
+        def __repr__(self):
+            # for pretty display in pycharm debugger
+            return 'Null'
+    sys._NULL = _NULL()
+Null = sys._NULL
 

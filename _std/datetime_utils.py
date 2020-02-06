@@ -22,7 +22,7 @@ import datetime
 from .misc import ToInt
 from .iter_utils import Each
 from ..pipeable import Pipeable
-from ..missing import Missing
+from .._core import Missing
 
 
 @Pipeable

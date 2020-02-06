@@ -27,7 +27,7 @@ from __future__ import annotations
 from batteries import Pipeable
 from typing import Any, Union
 import sys
-
+from ._core import Null
 
 
 if not hasattr(sys, '_EMPTY'):
@@ -307,7 +307,6 @@ class ChainAsSingleRange(IForwardRange):
             self.curR.popFront()
 
 
-
 @Pipeable
 def Materialise(r):
     answer = _MaterialisedRange()
@@ -345,8 +344,6 @@ class RMap(IForwardRange):
 
 
 
-
-
 @Pipeable
 class FileLineIR(IInputRange):
     def __init__(self, f, stripNL=False):
@@ -360,4 +357,49 @@ class FileLineIR(IInputRange):
         return self.line
     def popFront(self):
         self.line = self.f.readline()
+
+
+@Pipeable
+class RZipRagged(IInputRange):
+    """As RZip but input ranges do not need to be of same length, shorter ranges are post padded with Null"""
+    def __init__(self, ror):
+        self.ror = ror
+        self.allEmpty = ror >> AllSubRangesExhausted
+    @property
+    def empty(self):
+        return self.allEmpty
+    @property
+    def front(self) -> list:
+        parts = []
+        ror = self.ror.save()
+        while not ror.empty:
+            subrange = ror.front
+            if subrange.empty:
+                parts.append(Null)
+            else:
+                parts.append(subrange.front)
+            if not subrange.empty:
+                subrange.popFront()
+        return parts
+    def popFront(self):
+        ror = self.ror.save()
+        self.allEmpty = True
+        while not ror.empty:
+            subrange = ror.front
+            if not subrange.empty:
+                subrange.popFront()
+                if not subrange.empty:
+                    self.allEmpty = False
+            ror.popFront()
+
+
+@Pipeable
+def AllSubRangesExhausted(ror):
+    ror = ror.save()
+    answer = True
+    while not ror.empty:
+        if not ror.front.empty:
+            answer = False
+            break
+    return answer
 
