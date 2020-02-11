@@ -20,7 +20,7 @@
 
 from ..testing import AssertEqual
 from ..pipeable import Pipeable
-from anotherworld._std import Chain, Each, EachArgs
+from batteries._std import Chain, Each, EachArgs
 
 def test_stuff():
     2 >> AssertEqual >> 2

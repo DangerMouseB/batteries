@@ -1,4 +1,4 @@
-### anotherworld
+### batteries
 
 
 #### pipeable
@@ -16,7 +16,7 @@ lhs << rhs   calls f(x) and answers the lhs
 Example:
 
 ```
-from anotherworld import Pipeable
+from batteries import Pipeable
 
 @Pipeable
 def Each(xs, f):
@@ -43,9 +43,9 @@ expected = 14
 assert actual == expected
 ```
 
-See anotherworld/tests/test_pipeable.py for a fuller description and example code.
+See batteries/tests/test_pipeable.py for a fuller description and example code.
 
 #### ranges
 
-D style ranges in python - see anotherworld/examples/format_calendar.py and anotherworld/examples/tests/test_format_calendar.py
+D style ranges in python - see batteries/examples/format_calendar.py and batteries/examples/tests/test_format_calendar.py
 

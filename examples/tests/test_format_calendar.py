@@ -17,8 +17,8 @@
 #*******************************************************************************
 
 
-from anotherworld.examples.format_calendar import *
-from anotherworld.examples.format_calendar import _UntilWeekdayName
+from batteries.examples.format_calendar import *
+from batteries.examples.format_calendar import _UntilWeekdayName
 
 
 # see notes in format_calendar.py
@@ -150,7 +150,7 @@ def test_firstQuarter():
     2020 >> DatesInYear \
         >> MonthChunks \
         >> RTake(3) \
-        >> RZipRagged >> RMap >> MonthStringsToCalendarRow(na, " "*21, " ")
+        >> RRaggedZip >> RMap >> MonthStringsToCalendarRow(na, " "*21, " ")
 
 
 

@@ -44,7 +44,7 @@
 # usage in D.
 #
 # In Python the final arbiter will be code quality. Can you the reader follow it? How long does it take
-# for someone (measure both the author and others) to interesting and unexpected changes to it?
+# for someone (measure both the author and others) to make interesting and unexpected changes to it?
 #
 # A claim made of D is that it is plastic. Given the foundation of the pipeable module some of this
 # plasticity should follow with the usage of the ranges module. I have found it enjoyable to replace
@@ -55,8 +55,8 @@
 
 
 import datetime
-from anotherworld import *
-from anotherworld import Null
+from batteries import *
+from batteries import Null
 
 # ?datesInYear
 @Pipeable
@@ -135,7 +135,7 @@ def MonthStringsToCalendarRow(strings, blank, sep):
 
 # ?pasteBlocks
 def PasteBlocks(rOfMonthChunk):
-    return rOfMonthChunk >> RZipRagged >> RMap >> MonthStringsToCalendarRow(" "*21, " ")
+    return rOfMonthChunk >> RRaggedZip >> RMap >> MonthStringsToCalendarRow(" "*21, " ")
 
 
 

@@ -24,7 +24,7 @@
 
 from __future__ import annotations
 
-from anotherworld import Pipeable
+from batteries import Pipeable
 from typing import Any, Union
 import sys
 from ._core import Null
@@ -359,7 +359,7 @@ class FileLineIR(IInputRange):
 
 
 @Pipeable
-class RZipRagged(IInputRange):
+class RRaggedZip(IInputRange):
     """As RZip but input ranges do not need to be of same length, shorter ranges are post padded with Null"""
     def __init__(self, ror):
         self.ror = ror
