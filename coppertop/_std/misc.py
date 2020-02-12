@@ -18,7 +18,7 @@
 
 
 
-from batteries.pipeable import Pipeable
+from coppertop.pipeable import Pipeable
 
 
 # conversions

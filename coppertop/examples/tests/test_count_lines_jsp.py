@@ -17,11 +17,11 @@
 #*******************************************************************************
 
 
-from batteries.testing import AssertEqual
+from coppertop.testing import AssertEqual
 from ..count_lines_jsp import countLinesJsp, countLinesTrad, countLinesRanges1, countLinesRanges2, countLinesRanges3
 
 
-home = '/Users/david/shared/repos/github/DangerMouseB/batteries/examples/tests/'
+home = '/Users/david/shared/repos/github/DangerMouseB/coppertop/examples/tests/'
 filename = "linesForCounting.txt"
 expected = [
     ('aaa\n', 2),
