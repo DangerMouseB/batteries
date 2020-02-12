@@ -22,7 +22,7 @@ from ..pipeable import Pipeable
 
 
 _list_iter_type = type(iter([]))
-_np = None        # don't import numpy proactively
+_numpy = None        # don't import numpy proactively
 
 
 @Pipeable(leftToRight=True, rightToLeft=True)
@@ -48,13 +48,13 @@ TT = _callFReturnX(_printType)
 
 @Pipeable
 def IsNdArray(x):
-    global _np
+    global _numpy
     if type(x).__name__ != "ndarray":
         return False
     try:
-        import numpy as _np
-        return isinstance(x, _np.ndarray)
-    except AttributeError:      # cf None.ndarray if numpy is not installed
+        import numpy as _numpy
+        return isinstance(x, _numpy.ndarray)
+    except (ModuleNotFoundError, AttributeError):      # cf None.ndarray if numpy is not installed
         return False
 
 def _printLen(x):

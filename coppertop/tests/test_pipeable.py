@@ -21,7 +21,7 @@
 from ..pipeable import Pipeable, arg, args, kwargs, na
 from .._core import Missing
 from .._testing import AssertRaises
-import numpy as np
+
 
 
 def overview():
@@ -109,9 +109,13 @@ def overview():
     def at(xs, i):
         return xs[i]
 
-    # numpy arrays implement >> so must be wrapped first using arg(myNumpyArray) but it's not great so we'd have to not np.ndarrays
+    # numpy arrays implement >> so must be wrapped first using arg(myNumpyArray) but it's not great so we'd have to not numpy.ndarrays
     # from any function that might be piped later
-    assert (1 >> add >> arg(np.zeros(5)))[0] == 1
+    try:
+        import numpy
+        assert (1 >> add >> arg(numpy.zeros(5)))[0] == 1
+    except ModuleNotFoundError:
+        pass
 
     # a pipeable can be called using () more than once
     assert toTuple(...,2,...,4)(1,3) == (1,2,3,4)
