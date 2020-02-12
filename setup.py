@@ -1,7 +1,13 @@
 from distutils.core import setup
 setup(
   name = 'coppertop',
-  packages = ['coppertop'],
+  packages = [
+    'coppertop',
+    'coppertop._std',
+    'coppertop.examples',
+    'coppertop.examples.tests',
+    'coppertop.tests',
+  ],
   version = 'v0.1.3',
   license='Apache 2.0',
   description = 'Some batteries Python didn\'t come with - a pipe operator, d language style ranges, and more',
