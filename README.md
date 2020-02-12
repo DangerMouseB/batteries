@@ -16,7 +16,7 @@ lhs << rhs   calls f(x) and answers the lhs
 Example:
 
 ```
-from batteries import Pipeable
+from coppertop import Pipeable
 
 @Pipeable
 def Each(xs, f):
@@ -43,9 +43,9 @@ expected = 14
 assert actual == expected
 ```
 
-See batteries/tests/test_pipeable.py for a fuller description and example code.
+See coppertop/tests/test_pipeable.py for a fuller description and example code.
 
 #### ranges
 
-D style ranges in python - see batteries/examples/format_calendar.py and batteries/examples/tests/test_format_calendar.py
+D style ranges in python - see coppertop/examples/format_calendar.py and coppertop/examples/tests/test_format_calendar.py
 
