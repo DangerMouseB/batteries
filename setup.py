@@ -22,7 +22,7 @@ setup(
     'Intended Audience :: Developers',
     'Intended Audience :: End Users/Desktop',
     'Intended Audience :: Science/Research',
-    'Topic :: Software Development :: Utilities',
+    'Topic :: Utilities',
     'License :: OSI Approved :: Apache Software License',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
