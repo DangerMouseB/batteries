@@ -2,13 +2,13 @@ from distutils.core import setup
 setup(
   name = 'coppertop',
   packages = ['coppertop'],
-  version = 'v0.1.1',
+  version = 'v0.1.2',
   license='Apache 2.0',
   description = 'Some batteries Python didn\'t come with - a pipe operator, d language style ranges, and more',
   author = 'David Briant',
   author_email = 'coppertop@forwarding.cc',
   url = 'https://github.com/DangerMouseB/coppertop',
-  download_url = 'https://github.com/DangerMouseB/coppertop/archive/v0.1.1.tar.gz',
+  download_url = 'https://github.com/DangerMouseB/coppertop/archive/v0.1.2.tar.gz',
   keywords = ['piping', 'pipeline', 'pipe', 'functional', 'ranges'],
   install_requires=['numpy'],
   classifiers=[
