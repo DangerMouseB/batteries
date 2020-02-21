@@ -17,7 +17,7 @@
 #*******************************************************************************
 
 
-
+import operator
 from ..testing import AssertEqual
 from ..pipeable import Pipeable
 from coppertop._std import Chain, Each, EachArgs
@@ -36,7 +36,7 @@ def test_stuff():
     [1,2,3] >> Each >> SquareIt >> Chain(seed=0) >> Add >> AssertEqual >> 14
 
     [[1,2], [2,3], [3,4]] >> EachArgs >> Add >> AssertEqual >> [3, 5, 7]
-
+    [[1, 2], [2, 3], [3, 4]] >> EachArgs >> operator.add >> AssertEqual >> [3, 5, 7]
 
 
 def main():

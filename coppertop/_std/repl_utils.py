@@ -17,7 +17,8 @@
 #*******************************************************************************
 
 
-
+from pprint import pprint
+from copy import copy
 from ..pipeable import Pipeable
 
 
@@ -66,3 +67,55 @@ def _printLen(x):
         print(len(x))
 
 LL = _callFReturnX(_printLen)
+
+
+
+class _PipeablePrint(object):
+    def __init__(self, isPretty):
+        self._isPretty = isPretty
+
+    def __rrshift__(self, other):
+        # other >> self
+        self._Print(other)
+        return other
+
+    def __lshift__(self, other):
+        # self << other
+        self._Print(other)
+        return self
+
+    def _Print(self, other):
+        if isinstance(other, _list_iter_type):
+            other = list(copy(other))
+        if self._isPretty:
+            pprint(other)
+        else:
+            print(other)
+
+PPP = _PipeablePrint(True)
+
+
+class _PipeablePrintSplitCR(object):
+
+    def __rrshift__(self, other):
+        # other >> self
+        self._Print(other)
+        return other
+
+    def __lshift__(self, other):
+        # self << other
+        self._Print(other)
+        return self
+
+    def _Print(self, other):
+        if isinstance(other, _list_iter_type):
+            other = list(copy(other))
+        for line in other.split('\n'):
+            print(line)
+
+CRPP = _PipeablePrintSplitCR()
+
+
+@Pipeable
+def Pipeables(arg):
+    return sorted([k for k, v in arg.items() if isinstance(v, (Pipeable,))])

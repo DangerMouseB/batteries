@@ -11,7 +11,9 @@ coppertop/_std/__init__.py
 coppertop/_std/datetime_utils.py
 coppertop/_std/iter_utils.py
 coppertop/_std/list_utils.py
+coppertop/_std/math_utils.py
 coppertop/_std/misc.py
+coppertop/_std/module_utils.py
 coppertop/_std/pipe_utils.py
 coppertop/_std/range_utils.py
 coppertop/_std/repl_utils.py

@@ -40,7 +40,6 @@ def Not(x):
 
 
 
-
 @Pipeable
 def GetAttr(x, name):
     return getattr(x, name)

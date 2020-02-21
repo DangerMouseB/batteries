@@ -1,4 +1,4 @@
-#*******************************************************************************
+# *******************************************************************************
 #
 #    Copyright (c) 2017-2020 David Briant
 #
@@ -14,16 +14,29 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-#*******************************************************************************
+# *******************************************************************************
 
 
-from .datetime_utils import *
-from .iter_utils import *
-from .list_utils import *
-from .math_utils import *
-from .misc import *
-from .module_utils import *
-from .pipe_utils import *
-from .range_utils import *
-from .repl_utils import *
-from .string_utils import *
+try:
+    import numpy
+except:
+    numpy = None
+from ..pipeable import Pipeable
+
+
+
+@Pipeable
+def Mean(ndOrPy):
+    # should do full numpy?
+    return numpy.mean(ndOrPy)
+
+@Pipeable
+def Std(ndOrPy, dof=0):
+    # should do full numpy? std(a, axis=None, dtype=None, out=None, ddof=0, keepdims=<no value>)
+    return numpy.std(ndOrPy, dof)
+
+@Pipeable
+def Sqrt(x):
+    return numpy.sqrt(x)
+
+

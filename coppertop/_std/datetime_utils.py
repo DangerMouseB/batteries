@@ -35,6 +35,10 @@ def ToDate(x, strFormat=Missing):
         raise NotImplementedError()
 
 @Pipeable
+def ToDateTime(x, strFormat=Missing):
+    raise NotImplementedError()
+
+@Pipeable
 def Weekday(x):
     return x.weekday()
 
