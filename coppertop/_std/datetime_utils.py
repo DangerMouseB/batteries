@@ -16,31 +16,14 @@
 #
 #*******************************************************************************
 
+# TODO handle locales
 
 
-import datetime
-from .misc import ToInt
-from .iter_utils import Each
+
 from ..pipeable import Pipeable
 from .._core import Missing
 
 
-@Pipeable
-def ToDate(x, strFormat=Missing):
-    if strFormat is Missing:
-        # assume kdb format
-        # TODO implement other conversions
-        return datetime.date(*x.split(".") >> Each >> ToInt)
-    else:
-        raise NotImplementedError()
-
-@Pipeable
-def ToDateTime(x, strFormat=Missing):
-    raise NotImplementedError()
-
-@Pipeable
-def Weekday(x):
-    return x.weekday()
 
 @Pipeable
 def Year(x):
@@ -55,21 +38,35 @@ def Day(x):
     return x.day
 
 @Pipeable
+def Hour(x):
+    return x.hour
+
+@Pipeable
+def Minute(x):
+    return x.minute
+
+@Pipeable
+def Second(x):
+    return x.second
+
+@Pipeable
+def Weekday(x):
+    return x.weekday()
+
+@Pipeable
 def WeekdayName(x, locale=Missing):
-    # TODO implement for other locales
     return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][x]
 
 @Pipeable
 def WeekdayLongName(x, locale=Missing):
-    # TODO implement for other locales
     return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][x]
 
 @Pipeable
 def MonthName(month, locale=Missing):
-    # TODO implement for other locales
     return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1]
 
 @Pipeable
 def MonthLongName(month, locale=Missing):
-    # TODO implement for other locales
     return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month - 1]
+
+

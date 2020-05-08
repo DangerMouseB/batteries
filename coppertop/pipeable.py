@@ -127,7 +127,7 @@ class PipeableFunction(object):
         """Appends args and kwargs to the list of arguments for the function and returns the result"""
         if self._pipeOnly:
             raise TypeError('Cannot add arguments to %s using ()' % self._fnOrClass.__name__)
-        return self._bind(*args, **kwargs)
+        return self._bindAndCall(*args, **kwargs)
 
     def __rrshift__(self, lhs: Any) -> Any:
         # lhs >> self
@@ -135,13 +135,13 @@ class PipeableFunction(object):
         if not self._leftToRight:
             raise TypeError('Cannot add arguments to %s with >>' % self._fnOrClass.__name__)
         if isinstance(lhs, _Arg):
-            return self._bind(lhs.arg)
+            return self._bindAndCall(lhs.arg)
         elif isinstance(lhs, _Args):
-            return self._bind(*lhs.args)
+            return self._bindAndCall(*lhs.args)
         elif isinstance(lhs, _Kwargs):
-            return self._bind(**lhs.kwargs)
+            return self._bindAndCall(**lhs.kwargs)
         else:
-            return self._bind(lhs)
+            return self._bindAndCall(lhs)
 
     def __rshift__(self, rhs: Any) -> Any:
         # self >> rhs
@@ -152,13 +152,13 @@ class PipeableFunction(object):
             if not self._leftToRight:
                 raise TypeError('Cannot add arguments to %s with >>' % self._fnOrClass.__name__)
             if isinstance(rhs, _Arg):
-                return self._bind(rhs.arg)
+                return self._bindAndCall(rhs.arg)
             elif isinstance(rhs, _Args):
-                return self._bind(*rhs.args)
+                return self._bindAndCall(*rhs.args)
             elif isinstance(rhs, _Kwargs):
-                return self._bind(**rhs.kwargs)
+                return self._bindAndCall(**rhs.kwargs)
             else:
-                return self._bind(rhs)
+                return self._bindAndCall(rhs)
 
     def __rlshift__(self, lhs: Any) -> Any:
         # lhs << self
@@ -169,7 +169,7 @@ class PipeableFunction(object):
             raise TypeError(
                 'Can only call %s with << when there is only one available core binding. Currently there are %s' % (
                 self._fnOrClass.__name__, self._numAvailableCoreBindings))
-        self._bind(lhs)
+        self._bindAndCall(lhs)
         return lhs
 
     def __lshift__(self, rhs: Any) -> Any:
@@ -184,8 +184,17 @@ class PipeableFunction(object):
                 raise TypeError(
                     'Can only call %s with << when there is only one available core binding. Current there are %s' % (
                     self._fnOrClass.__name__, self._numAvailableCoreBindings))
-            self._bind(rhs)
+            self._bindAndCall(rhs)
             return self
+
+    def _bindAndCall(self, *args, **kwargs):
+        # _bindAndCall is slightly easier to step through in a debugger
+        bindResult = self._bind(*args, **kwargs)
+        if isinstance(bindResult, tuple):
+            return self._fnOrClass(*bindResult[0], **bindResult[1])
+        else:
+            return bindResult
+
 
     def _bind(oldself, *args, **kwargs):
         self = oldself._copy()
@@ -257,7 +266,7 @@ class PipeableFunction(object):
                 if arg is _PROCESSED:
                     continue
             if arg is not _PROCESSED:
-                raise TypeError('Number of args passed in > number of unbound parameters')
+                raise TypeError('%s>>Number of args passed in > number of unbound parameters' % self._fnRepr)
 
         # process each kwarg finding it a home
         for name, arg in kwargs.items():
@@ -279,12 +288,12 @@ class PipeableFunction(object):
             if self._hasKwargs:
                 self._optionalBindings[name] = arg
                 continue
-            raise TypeError('No unbound parameter available for arg named "%s"' % name)
+            raise TypeError('%s>>No unbound parameter available for arg named "%s"' % (self._fnRepr, name))
 
 
         if addedArgEllipsis:
             if len(availableCoreBindings) > 0:
-                raise TypeError('... - number of args passed in < number of unbound parameters')
+                raise TypeError('%s>>... - number of args passed in < number of unbound parameters' % self._fnRepr)
 
         if addedArgEllipsis or addedKwargEllipsis:
             for name, arg in self._coreBindings.items():
@@ -296,9 +305,10 @@ class PipeableFunction(object):
 
         self._numAvailableCoreBindings = len(availableCoreBindings) 
         if not (addedArgEllipsis or addedKwargEllipsis) and self._numAvailableCoreBindings == 0:
-            return self._fnOrClass(
-                *list(self._coreBindings.values()),
-                **{k:v for k,v in self._optionalBindings.items() if v is not Missing})
+            return (
+                list(self._coreBindings.values()),
+                {k:v for k,v in self._optionalBindings.items() if v is not Missing}
+            )
         else:
             return self
 

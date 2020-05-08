@@ -1,6 +1,6 @@
 ### coppertop
 
-The coppertop package has two key features, a piping opertor and D 
+The coppertop package has two key features, a piping opertor (with overloading) and D 
 language style ranges. I have found these useful for writing code in a piping style (i.e. 
 in a smalltalk / kdb / functional manner).
 
@@ -19,7 +19,9 @@ solve the jsp problem described in https://en.wikipedia.org/wiki/Jackson_structu
 solve the calendar printing problem described in https://wiki.dlang.org/Component_programming_with_ranges
 
 
-#### pipeable
+<br>
+
+#### piping
 
 The *Pipeable* decorator extends functions with the >> and << operators with the effect 
 of adding pipeline like behaviour (e.g. similar to |> in F#).
@@ -64,8 +66,32 @@ assert actual == expected
 
 Addtionally functions that are decorated with Pipeable can easily be 
 made partial by providing some of the arguments, for example 
-`Chain(seed=0)` in the code above.
+`Chain(seed=0)` in the code above. Parameter sequence is kdb style 
+rather than F# style, i.e. >> doesn't change the precedence of ().
 
+
+<br>
+
+#### overloading
+The *Pipeable* decorator also allows functions to be overloaded by type.
+
+```
+from coppertop import Pipeable
+
+@Pipeable(thing=int)
+def FriendlyType(thing):
+    return "I am an int"
+
+@Pipeable(thing=str)
+def FriendlyType(thing):
+    return "I am a str"
+
+18 >> FriendlyType >> AssertEqual >> "I am an int"
+"hi" >> FriendlyType >> AssertEqual >> "I am an str"
+```
+
+
+<br>
 
 #### ranges
 
@@ -88,4 +114,14 @@ However the the range implementation in D has a key redeeming feature.
 The input and output types are not fixed as in typical DAG implementations 
 so each range is easier to test and reason about in isolation. Thus they can
 be composed more easily in longer pipelines and with a higher degree of confidence.
+
+
+<br>
+
+#### minor features
+
+datetimetz - date time types that do not allow the observation 
+context (i.e. typically the tz or location) to be abstracted.
+
+
 

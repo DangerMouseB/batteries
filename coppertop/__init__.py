@@ -18,7 +18,7 @@
 
 _all = set(['Missing', 'Null'])
 
-import sys
+import inspect
 
 def _getPublicMembersOnly(module):
     names = ['coppertop.pipeable', module.__name__]
