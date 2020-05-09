@@ -38,6 +38,24 @@ import types, inspect, collections, sys
 from ._core import Missing
 
 
+# add options to speed up
+# quickBindOneArg
+#       if unary and (), << or >>
+#           immediately execute
+#       else () only
+#           then quickBindHandleOneEllipses (next call (), << or >> will execute)
+
+# quickBindLastArg
+#       if unary
+#           immediately execute
+#       else
+#           if len(args) == len(myArgs)
+#           then execute immediately
+#           else quickBindNoEllipses (next call will execute)
+
+# quickBindNoEllipses - throws error if ellipses? or reverts to quickBindHandleOneEllipses or doesn't check until final call throws an error
+
+# could also add state so PipeableFunction is prepped ready for the last arg
 
 def Pipeable(*args, overrideLHS=False, pipeOnly=False, leftToRight=Missing, rightToLeft=Missing):
     # overrideLHS allows a higher order function PF2 to override the behaviour of another PipeableFunction PF1
