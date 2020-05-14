@@ -27,7 +27,7 @@
 
 # We want to be as strongly typed as possible - so at the application level a decision wil be made as to precision.
 # You cannot take a microsecond precision timestamp and compare it with a millisecond precision timestamp
-# So UTC.subseconds returns None, millis or micros depending on precision
+# So AbstractDateTime.subseconds returns None, millis or micros depending on precision
 
 # There's a peculiar view expressed in the [java.time documentation](https://docs.oracle.com/javase/9/docs/api/java/time/package-summary.html) -
 # "ZonedDateTime stores a date and time with a time-zone. This is useful if you want to perform accurate
@@ -36,10 +36,10 @@
 # to add considerable complexity to an application."
 #
 # Since we are financially focused, instead we insist that all time aware types have a timezone but we
-# encourage using a city as the observers context rather than a fixed offet to UTC (which changes during
-# DST. We have strived to make the api better at reducing the above alleged complexity.
+# encourage using a city as the observers context rather than a fixed offet to AbstractDateTime (which changes during
+# DST). We have striven to make the api better at reducing the above alleged complexity.
 #
-# Our initial focus here is a good interface and possibly later reimplementation is a fast systems language.
+# Our initial focus here is a good interface and possibly later reimplementation in a fast systems language.
 
 
 # FORMATTING CODES
@@ -67,7 +67,7 @@
 # ms - millisecond precision
 # us - microsecond precision
 # ns - nanosecond precision
-# FFFF, IIII, ZZZZ - FpML City, Iana City, Iana Tz
+# FFFF, IIII, ZZZZ - FpML City, Iana City, Iana ObserversCtx
 # ZZZ - common DST aware time-zone name, e.g. GMT, BST, EST, EDT etc
 # HMUZ - futures contract month code
 
@@ -80,7 +80,7 @@ from _strptime import _strptime
 from collections import namedtuple
 
 from ..pipeable import Pipeable, Missing
-from ._enums import Tz, FpMLCity, IanaCity, IanaTz, Precision, FpMLCityForName, IanaCityForName, IanaTzForName, ToIanaCity
+from ._enums import ObserversCtx, FpMLCity, IanaCity, IanaTz, Precision, FpMLCityForName, IanaCityForName, IanaTzForName, ToIanaCity
 
 _YMDHMSSPZ = namedtuple('_YMDHMSSPZ', ['y', 'M', 'd', 'h', 'm', 's', 'ss', 'p', 'z'])
 
@@ -108,7 +108,20 @@ def overload(*types):
 
 
 
-class UTC(object):
+class AbstractDate(_date):
+    def __repr__(self):
+        return 'AbstractDate(%s, %s, %s)' % (
+            self.year,
+            self.month,
+            self.day
+        )
+
+class AbstractTimeOfDay(_time):
+    def __init__(self, *args):
+        # H, M, [S], [subSeconds, precision]
+        pass
+
+class AbstractDateTime(object):
     def __init__(self, *args):
         if len(args) == 1:
             # YMDHMS
@@ -135,7 +148,7 @@ class UTC(object):
         else:
             raise TypeError('%s args passed, 5, 6 or 8 required - y, M, d, H, M, [S], [subSeconds, precision]')
     def __repr__(self):
-        return 'UTC(%s, %s, %s, %s, %s, %s, %s, %s)' % (
+        return 'AbstractDateTime(%s, %s, %s, %s, %s, %s, %s, %s)' % (
             self._dt.year,
             self._dt.month,
             self._dt.day,
@@ -176,49 +189,27 @@ class UTC(object):
         else:
             raise TypeError('Unknown precision type')
     def __eq__(self, other):
-        if not isinstance(other, UTC):
-            raise TypeError('RHS (%s) is not UTC' % repr(other))
+        if not isinstance(other, AbstractDateTime):
+            raise TypeError('RHS (%s) is not AbstractDateTime' % repr(other))
         if self.precision != other.precision:
             raise TypeError('LHS Precision(%s) != RHS Precision(%s)' % (self.precision, other.precision))
         return (self._dt == other._dt)
 
-
-class Date(_date):
-    def __repr__(self):
-        return 'Date(%s, %s, %s)' % (
-            self.year,
-            self.month,
-            self.day
-        )
-
-class TimeTz(object):
+class ObservedTimeOfDay(object):
     def __init__(self, *args):
-        # Tz, H, M, [S], [subSeconds, precision]
+        # ObserversCtx, H, M, [S], [subSeconds, precision]
         if len(args) == 3:
             tz = args[2]
 
-class DateTimeTz(object):
+class ObservedDateTime(object):
     def __init__(self):
-        # Date, TimeTz
-        # Date, HMS, Tz
-        # Date, H, M, [S], [subSeconds, precision], Tz
-        # YMDHMS, Tz
-        # y, M, d, HMS, Tz
-        # y, M, d, H, M, [S], [subSeconds, precision], Tz
+        # AbstractDate, ObservedTimeOfDay
+        # AbstractDate, AbstractTimeOfDay, ObserversCtx
+        # AbstractDate, H, M, [S], [subSeconds, precision], ObserversCtx
+        # YMDHMS, ObserversCtx
+        # y, M, d, AbstractTimeOfDay, ObserversCtx
+        # y, M, d, H, M, [S], [subSeconds, precision], ObserversCtx
         pass
-
-class HMS(object):
-    def __init__(self, *args):
-        # H, M, [S], [subSeconds, precision]
-        pass
-
-class YMDHMS(object):
-    def __init__(self, *args):
-        # y, M, d, H, M, [S], [subSeconds, precision]
-        pass
-
-class YearMonth(object): pass
-class MonthDay(object): pass
 
 
 
@@ -329,55 +320,59 @@ MM_DD_YYYY = 6
 # etc tbc
 
 @Pipeable
-def ParseUTC(format, s, locale=Missing):
-    args = _parseDTTz(s, format)
-    assert args[-1] == None
-    return UTC(*args[0:8])
-
-@Pipeable
-def ParseDateTimeTz(format, s, locale=Missing):
-    # "2020.01.01 16:15 GBLN" >> ToDateTimeTz
-    pass
-
-@Pipeable
-def ParseDate(format, s, locale=Missing):
+def ParseAbstractDate(format, s, locale=Missing):
     if isinstance(format, int):
 
         if format == YY_MM_DD:
             YY = int(s[0:2])
             YYYY = YY + 1900 if YY >= 70 else YY + 2000
-            return Date(YYYY, int(s[3:5]), int(s[6:8]))
+            return AbstractDate(YYYY, int(s[3:5]), int(s[6:8]))
 
         elif format == YYYY_MM_DD:
-            return Date(int(s[0:4]), int(s[5:7]), int(s[8:10]))
+            return AbstractDate(int(s[0:4]), int(s[5:7]), int(s[8:10]))
 
         elif format == DD_MM_YY:
             YY = int(s[6:8])
             YYYY = YY + 1900 if YY >= 70 else YY + 2000
-            return Date(YYYY, int(s[3:5]), int(s[0:2]))
+            return AbstractDate(YYYY, int(s[3:5]), int(s[0:2]))
 
         elif format == DD_MM_YYYY:
-            return Date(int(s[6:10]), int(s[3:5]), int(s[0:2]))
+            return AbstractDate(int(s[6:10]), int(s[3:5]), int(s[0:2]))
 
         elif format == MM_DD_YY:
             YY = int(s[6:8])
             YYYY = YY + 1900 if YY >= 70 else YY + 2000
-            return Date(YYYY, int(s[0:2]), int(s[3:5]))
+            return AbstractDate(YYYY, int(s[0:2]), int(s[3:5]))
 
         elif format == MM_DD_YYYY:
-            return Date(int(s[6:10]), int(s[0:2]), int(s[3:5]))
+            return AbstractDate(int(s[6:10]), int(s[0:2]), int(s[3:5]))
 
     else:
         args = _parseDTTz(s, format)
         assert args[-1] == None
-        return Date(*args[0:3])
+        return AbstractDate(*args[0:3])
 
 @Pipeable
-def ParseTimeTz(format, s, locale=Missing):
+def ParseAbstractTimeOfDay(format, s, locale=Missing):
     pass
 
 @Pipeable
-def ParseTz(format, s, locale=Missing):
+def ParseAbstractDateTime(format, s, locale=Missing):
+    args = _parseDTTz(s, format)
+    assert args[-1] == None
+    return AbstractDateTime(*args[0:8])
+
+@Pipeable
+def ParseObservedTimeOfDay(format, s, locale=Missing):
+    pass
+
+@Pipeable
+def ParseObservedDateTime(format, s, locale=Missing):
+    # "2020.01.01 16:15 GBLN" >> ToDateTimeTz
+    pass
+
+@Pipeable
+def ParseObserversCtx(format, s, locale=Missing):
     pass
 
 @Pipeable
@@ -396,21 +391,38 @@ def ParseIanaTz(s, locale=Missing):
 def ParseOffsetTz(s, locale=Missing):
     pass
 
-@Pipeable
-def ParseYMDHMS(format, s, locale=Missing):
-    pass
 
-@Pipeable
-def ParseHMS(format, s, locale=Missing):
-    pass
 
-@Pipeable
-def ParseYearMonth(format, s, locale=Missing):
-    pass
+#*******************************************************************************
+# String Formatting
+#*******************************************************************************
 
-@Pipeable
-def ParseMonthDay(format, s, locale=Missing):
-    pass
+
+@overload(AbstractDate)
+def ToString(format, ad, locale=Missing):
+    return repr(ad)
+
+@overload(str, AbstractTimeOfDay)
+def ToString(format, atod, locale=Missing):
+    return repr(atod)
+
+@overload(str, AbstractDateTime)
+def ToString(format, adt, locale=Missing):
+    return repr(adt)
+
+@overload(str, ObservedTimeOfDay)
+def ToString(format, otod, locale=Missing):
+    return repr(otod)
+
+@overload(str, ObservedDateTime)
+def ToString(format, otd, locale=Missing):
+    return repr(otd)
+
+@overload(str, ObserversCtx)
+def ToString(format, oc, locale=Missing):
+    return repr(oc)
+
+ToString = Pipeable(ToString)
 
 
 
@@ -420,27 +432,29 @@ def ParseMonthDay(format, s, locale=Missing):
 
 def _example():
     LON = _timezone('Europe/London')
-    UTC = _timezone('UTC')
+    UTC = _timezone('AbstractDateTime')
     NYC = _timezone('America/New_York')
 
     a = LON.localize(_datetime(2020,6,1,16,15))
     b = a.astimezone(NYC)
     c = b.astimezone(UTC)
-    
-@overload(Tz, UTC)
-def ToTz(tz, u):
-    assert isinstance(tz, (FpMLCity, IanaCity, IanaTz))
+
+
+@overload(ObserversCtx, ObservedDateTime)
+def ToCtx(ctx, odt: Union[FpMLCity, IanaCity, IanaTz]):
+    # Converts a ObservedDateTime into a new ObservedDateTime for the given ObserversCtx
+    # odt >> ToDateTimeTz(GBLN)
+    assert isinstance(ctx, (FpMLCity, IanaCity, IanaTz))
     raise NotImplementedError()
 
-@overload(Tz, DateTimeTz)
-def ToTz(tz, dttz: Union[FpMLCity, IanaCity, IanaTz]):
-    # Converts a DateTimeTz into a new DateTimeTz for the given Tz
-    # aDTTz >> ToDateTimeTz(GBLN)
-    assert isinstance(tz, (FpMLCity, IanaCity, IanaTz))
+@overload(ObserversCtx, AbstractTimeOfDay)
+def AsObserved(ctx, atod):
+    assert isinstance(ctx, (FpMLCity, IanaCity, IanaTz))
     raise NotImplementedError()
 
-@overload(DateTimeTz)
-def ToUTC(dttz):
+@overload(ObserversCtx, AbstractDateTime)
+def AsObserved(ctx, adt):
+    assert isinstance(ctx, (FpMLCity, IanaCity, IanaTz))
     raise NotImplementedError()
 
 
@@ -451,70 +465,42 @@ def ToUTC(dttz):
 
 @Pipeable
 def AsOfSecond(x):
-    assert isinstance(x, (UTC, DateTimeTz, TimeTz, YMDHMS, HMS))
+    assert isinstance(x, (AbstractTimeOfDay, AbstractDateTime, ObservedTimeOfDay, ObservedDateTime))
     raise NotImplementedError
 
 @Pipeable
 def AsOfMilli(x):
-    assert isinstance(x, (UTC, DateTimeTz, TimeTz, YMDHMS, HMS))
+    assert isinstance(x, (AbstractTimeOfDay, AbstractDateTime, ObservedTimeOfDay, ObservedDateTime))
     raise NotImplementedError
 
 @Pipeable
 def AsOfMicro(x):
-    assert isinstance(x, (UTC, DateTimeTz, TimeTz, YMDHMS, HMS))
+    assert isinstance(x, (AbstractTimeOfDay, AbstractDateTime, ObservedTimeOfDay, ObservedDateTime))
     raise NotImplementedError
 
 @Pipeable
 def AsOfNano(x):
-    assert isinstance(x, (UTC, DateTimeTz, TimeTz, YMDHMS, HMS))
+    assert isinstance(x, (AbstractTimeOfDay, AbstractDateTime, ObservedTimeOfDay, ObservedDateTime))
     raise NotImplementedError
 
 
 
 #*******************************************************************************
-# String Formatting
+# Operations
 #*******************************************************************************
 
-@overload(str, UTC)
-def ToString(format, u, locale=Missing):
-    return repr(u)
+class DaysSeconds(object):
+    def __init__(self, *args):
+        pass
+        # days
+        # days, seconds
+        # days, seconds, subseconds, precision
 
-@overload(Date)
-def ToString(format, d, locale=Missing):
-    return repr(d)
-
-@overload(str, DateTimeTz)
-def ToString(format, dttz, locale=Missing):
-    return repr(dttz)
-
-@overload(str, TimeTz)
-def ToString(format, ttz, locale=Missing):
-    return repr(ttz)
-
-@overload(str, HMS)
-def ToString(format, ttz, locale=Missing):
-    return repr(ttz)
-
-@overload(str, YMDHMS)
-def ToString(format, ttz, locale=Missing):
-    return repr(ttz)
-
-@overload(str, YearMonth)
-def ToString(format, ym, locale=Missing):
-    return repr(ym)
-
-ToString = Pipeable(ToString)
-
-
-
-#*******************************************************************************
-# Simple arithmetic
-#*******************************************************************************
-
-@Pipeable
-def AddDays(numDays, d):
-    # typical usage aDate >> AddDays(n)
-    pyDate = _date(d.year, d.month, d.day) + _timedelta(numDays)
-    return Date(pyDate.year, pyDate.month, pyDate.day)
+@Pipeable(ds=DaysSeconds, utc=ObservedDateTime)
+def AddPeriod(ds, utc):
+    # typical usage aDate >> AddPeriod(dt)
+    assert utc.ctx == IanaTz.UTC
+    pyDT = utc._datetime + _timedelta(ds.days, ds.second, ds.milli )
+    return ObservedDateTime(pyDate.year, pyDate.month, pyDate.day)
 
 

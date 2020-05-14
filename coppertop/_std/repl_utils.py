@@ -25,12 +25,37 @@ from ..pipeable import Pipeable
 _list_iter_type = type(iter([]))
 _numpy = None        # don't import numpy proactively
 
+# Consider the following - print converts to str and embedding in a build-in converts to repr - which means to be
+# consistent we have to use print(repr(Fred)) - in the bones ipython kernel we output repr
+#
+# class Fred():
+#     def __str__(self):
+#         return 'str Fred'
+#     def __repr__(self):
+#         return 'repr Fred'
+#
+# print((Fred(),));
+# Fred() >> SS
+# print([Fred(),]);
+# Fred() >> PP;
+#
+# (repr Fred,)
+# str Fred
+# [repr Fred]
+# repr Fred
 
 @Pipeable(leftToRight=True, rightToLeft=True)
 def _callFReturnX(f, x):
     f(x)
     return x
-PP = _callFReturnX(print)
+
+def _printRepr(x):
+    print(repr(x))
+PP = _callFReturnX(_printRepr)
+
+def _printStr(x):
+    print(str(x))
+SS = _callFReturnX(_printStr)
 
 def _printDir(x):
     print(dir(x))

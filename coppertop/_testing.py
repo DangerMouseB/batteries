@@ -17,16 +17,30 @@
 #*******************************************************************************
 
 
-import sys, traceback
-from ._core import Missing
+import sys, traceback, contextlib
+# from io import StringIO
 
 
-class HookStdout(object):
 
-    def __init__(self, lines):
-        self.lines = lines
+@contextlib.contextmanager
+def HookStdOutErrToLines():
+    oldout, olderr = sys.stdout, sys.stderr
+    try:
+        # out = [StringIO(), StringIO()]
+        out = [StreamToLines(), StreamToLines()]
+        sys.stdout, sys.stderr = out
+        yield out
+    finally:
+        sys.stdout, sys.stderr = oldout, olderr
+        # out[0] = out[0].getvalue()
+        # out[1] = out[1].getvalue()
+        out[0] = out[0].lines
+        out[1] = out[1].lines
+
+class StreamToLines(object):
+    def __init__(self):
+        self.lines = []
         self.textBuffer = ""
-
     def write(self, text=""):
         if len(text) > 0:
             splits = text.split("\n")
@@ -35,16 +49,6 @@ class HookStdout(object):
                 self.lines.append(self.textBuffer)
                 self.textBuffer = ""
             self.textBuffer += splits[-1:][0]
-        else:
-            raise NotImplementedError()
-
-    def __enter__(self):
-        self.oldStdout = sys.stdout
-        sys.stdout = self
-
-    def __exit__(self, type, e, tb):
-        sys.stdout = self.oldStdout
-        return False
 
 
 

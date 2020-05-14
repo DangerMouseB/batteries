@@ -31,14 +31,20 @@ def ToStr(x):
 def ToInt(a):
     return int(a)
 
+@Pipeable
+def ToRepr(x):
+    return str(x)
+
+@Pipeable
+def ToString(format, x):
+    raise NotImplementedError('ToString')
+
 
 # other
 
 @Pipeable
 def Not(x):
     return not x
-
-
 
 @Pipeable
 def GetAttr(x, name):

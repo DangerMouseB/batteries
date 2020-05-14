@@ -19,8 +19,8 @@
 
 from coppertop.examples.format_calendar import *
 from coppertop.examples.format_calendar import _UntilWeekdayName
-from coppertop import datetimetz
-from coppertop.datetimetz import AddDays, ParseDate, YYYY_MM_DD
+from coppertop import time
+from coppertop.time import AddDays, ParseAbstractDate, YYYY_MM_DD
 
 
 # see notes in format_calendar.py
@@ -30,7 +30,7 @@ from coppertop.datetimetz import AddDays, ParseDate, YYYY_MM_DD
 
 @Pipeable
 def _IthDateBetween(start, end, i):
-    ithDate = start >> datetimetz.AddDays(i)
+    ithDate = start >> time.AddDays(i)
     return FnAdapterFRange.Empty if ithDate > end else ithDate
 
 @Pipeable
@@ -60,15 +60,15 @@ def main():
 def test_allDaysInYear():
     actual = []
     o = 2020 >> DatesInYear >> PushInto >> ListOR(actual)
-    actual[0] >> AssertEqual >> datetimetz.Date(2020, 1, 1)
-    actual[-1] >> AssertEqual >> datetimetz.Date(2020, 12, 31)
+    actual[0] >> AssertEqual >> time.AbstractDate(2020, 1, 1)
+    actual[-1] >> AssertEqual >> time.AbstractDate(2020, 12, 31)
     [e for e in 2020 >> DatesInYear >> GetIRIter] >> Len >> AssertEqual >> 366
 
 
 def test_datesBetween():
-    ('2020.01.16' >> ParseDate(YYYY_MM_DD)) >> DatesBetween >> ('2020.01.29' >> ParseDate(YYYY_MM_DD)) \
-        >> RMap >> Day \
-        >> Materialise >> AssertEqual >> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+    ('2020.01.16' >> ParseAbstractDate(YYYY_MM_DD)) >> DatesBetween >> ('2020.01.29' >> ParseAbstractDate(YYYY_MM_DD)) \
+    >> RMap >> Day \
+    >> Materialise >> AssertEqual >> [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 
 
 def test_chunkingIntoMonths():
@@ -88,12 +88,12 @@ def test_checkNumberOfDaysInEachMonth():
 def test__UntilWeekdayName():
     r = 2020 >> DatesInYear
     dates = [d for d in r >> _UntilWeekdayName(weekdayName='Sun') >> GetIRIter]
-    dates[-1] >> AssertEqual >> datetimetz.Date(2020,1,5)   # the sunday
-    r >> Front >> AssertEqual >> datetimetz.Date(2020,1,6) # the monday
+    dates[-1] >> AssertEqual >> time.AbstractDate(2020, 1, 5)   # the sunday
+    r >> Front >> AssertEqual >> time.AbstractDate(2020, 1, 6) # the monday
 
 
 def test_WeekChunks():
-    datesR = DatesBetween('2020.01.16' >> ParseDate(YYYY_MM_DD), '2020.01.29' >> ParseDate(YYYY_MM_DD))
+    datesR = DatesBetween('2020.01.16' >> ParseAbstractDate(YYYY_MM_DD), '2020.01.29' >> ParseAbstractDate(YYYY_MM_DD))
     weeksR = datesR >> ChunkUsingSubRangeGenerator(_UntilWeekdayName(weekdayName='Sun'))
     actual = []
     while not weeksR.empty:

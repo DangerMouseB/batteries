@@ -17,7 +17,7 @@
 #*******************************************************************************
 
 
-from ._testing import HookStdout, AssertRaises
+from ._testing import HookStdOutErrToLines, AssertRaises
 from .pipeable import Pipeable
 
 

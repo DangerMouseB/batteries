@@ -30,12 +30,12 @@ class NamedEnum(object):
         return self.name
 
 
-class Tz(NamedEnum):pass
+class ObserversCtx(NamedEnum):pass
 
 
 
 _FpMLCityByName = {}
-class FpMLCity(Tz):
+class FpMLCity(ObserversCtx):
     def __init__(self, name):
         super().__init__(name)
         _FpMLCityByName[name] = self
@@ -67,7 +67,7 @@ def FpMLCityForName(name):
 
 
 _IanaCityByName = {}
-class IanaCity(Tz):
+class IanaCity(ObserversCtx):
     def __init__(self, name):
         super().__init__(name)
         _IanaCityByName[name] = self
@@ -82,7 +82,7 @@ def IanaCityForName(name):
 
 
 _IanaTzByName = {}
-class IanaTz(Tz):
+class IanaTz(ObserversCtx):
     def __init__(self, name):
         super().__init__(name)
         _IanaTzByName[name] = self
@@ -109,7 +109,7 @@ def ToIanaCity(fpmlCity):
 
 
 class Precision(NamedEnum): pass
-Precision.s = Precision('S')
+Precision.s = Precision('s')
 Precision.ms = Precision('ms')
 Precision.us = Precision('us')
 Precision.ns = Precision('ns')

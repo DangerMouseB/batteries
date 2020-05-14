@@ -54,8 +54,8 @@
 # help or hinder? Answers on a postcard pls.
 
 
-from coppertop import datetimetz
-from coppertop.datetimetz import AddDays
+from coppertop import time
+from coppertop.time import AddDays
 from coppertop import *
 from coppertop import Null
 
@@ -65,7 +65,7 @@ def DatesInYear(year):
      return FnAdapterFRange(year >> _IthDateInYear)
 @Pipeable
 def _IthDateInYear(year, i):
-    ithDate = datetimetz.Date(year, 1, 1) >> AddDays(i)
+    ithDate = time.AbstractDate(year, 1, 1) >> AddDays(i)
     return FnAdapterFRange.Empty if ithDate.year != year else ithDate
 
 

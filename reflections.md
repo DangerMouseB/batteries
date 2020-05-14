@@ -8,7 +8,7 @@ Here I will, somewhat narcissistically, reflect on those changes.
 
 <br>
 
-### dog-typing vapourware - understanding type inheritance differently
+### Pipeable multi-dispatch - dog-typing vapourware - understanding type inheritance differently
 
 To paraphrase Steve Cook - an object's class defines it's structure, a type an 
 object can belong too defines the object's role the system.
@@ -181,3 +181,10 @@ stay with the dog, and behaviours that are exogenously defined such as shepherdi
 (similarly LessThan) should be exogenous to the dog. 
 
 The ways of thinking and knowing to handle this do need to be fostered. 
+
+
+
+
+
+
+
