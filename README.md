@@ -120,7 +120,7 @@ be composed more easily in longer pipelines and with a higher degree of confiden
 
 #### minor features
 
-datetimetz - date time types that do not allow the observation 
+coppertop.time - time types that do not allow the observation 
 context (i.e. typically the tz or location) to be abstracted.
 
 
