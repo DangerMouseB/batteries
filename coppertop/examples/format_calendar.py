@@ -55,7 +55,7 @@
 
 
 from coppertop import time
-from coppertop.time import AddDays
+from coppertop.time import AddPeriod, DaySecond
 from coppertop import *
 from coppertop import Null
 
@@ -65,7 +65,7 @@ def DatesInYear(year):
      return FnAdapterFRange(year >> _IthDateInYear)
 @Pipeable
 def _IthDateInYear(year, i):
-    ithDate = time.AbstractDate(year, 1, 1) >> AddDays(i)
+    ithDate = time.AbstractDate(year, 1, 1) >> AddPeriod(DaySecond(i))
     return FnAdapterFRange.Empty if ithDate.year != year else ithDate
 
 

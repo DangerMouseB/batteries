@@ -489,18 +489,23 @@ def AsOfNano(x):
 # Operations
 #*******************************************************************************
 
-class DaysSeconds(object):
+class DaySecond(object):
     def __init__(self, *args):
-        pass
+        self.days = args[0]
         # days
         # days, seconds
         # days, seconds, subseconds, precision
 
-@Pipeable(ds=DaysSeconds, utc=ObservedDateTime)
+# @Pipeable(ds=DaySecond, utc=ObservedDateTime)
+@Pipeable
 def AddPeriod(ds, utc):
     # typical usage aDate >> AddPeriod(dt)
     assert utc.ctx == IanaTz.UTC
     pyDT = utc._datetime + _timedelta(ds.days, ds.second, ds.milli )
-    return ObservedDateTime(pyDate.year, pyDate.month, pyDate.day)
+    return ObservedDateTime(pyDT.year, pyDT.month, pyDT.day)
 
-
+@Pipeable
+def AddPeriod(ds, ad):
+    # typical usage anAbstractDate >> AddPeriod(dt)
+    pyDT = ad + _timedelta(ds.days)
+    return AbstractDate(pyDT.year, pyDT.month, pyDT.day)

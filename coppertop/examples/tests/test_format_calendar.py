@@ -20,7 +20,7 @@
 from coppertop.examples.format_calendar import *
 from coppertop.examples.format_calendar import _UntilWeekdayName
 from coppertop import time
-from coppertop.time import AddDays, ParseAbstractDate, YYYY_MM_DD
+from coppertop.time import AddPeriod, DaySecond, ParseAbstractDate, YYYY_MM_DD
 
 
 # see notes in format_calendar.py
@@ -30,7 +30,7 @@ from coppertop.time import AddDays, ParseAbstractDate, YYYY_MM_DD
 
 @Pipeable
 def _IthDateBetween(start, end, i):
-    ithDate = start >> time.AddDays(i)
+    ithDate = start >> time.AddPeriod(DaySecond(i))
     return FnAdapterFRange.Empty if ithDate > end else ithDate
 
 @Pipeable
