@@ -1,4 +1,11 @@
-from distutils.core import setup
+from setuptools import setup
+
+# read the contents of README.md file
+from os import path
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 setup(
   name = 'coppertop',
   packages = [
@@ -10,11 +17,14 @@ setup(
     'coppertop.time',
     'coppertop.time.tests',
   ],
-  version = 'v0.1.7',
+  python_requires='>=3.6',
+  version = 'v0.1.9',
   license='Apache 2.0',
   description = 'Some batteries Python didn\'t come with - a pipe operator, d language style ranges, and more',
+  long_description_content_type='text/markdown',
+  long_description=long_description,
   author = 'DangerMouseB',
-  author_email = 'coppertop@forwarding.cc',
+  author_email = 'dangermouseb@forwarding.cc',
   url = 'https://github.com/DangerMouseB/coppertop',
   download_url = 'https://github.com/DangerMouseB/coppertop/archive/v0.1.7.tar.gz',
   keywords = ['piping', 'pipeline', 'pipe', 'functional', 'ranges'],

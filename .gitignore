@@ -6,3 +6,9 @@
 .idea/modules.xml
 *.gz
 *.gz
+MANIFEST
+coppertop.egg-info/dependency_links.txt
+coppertop.egg-info/PKG-INFO
+coppertop.egg-info/SOURCES.txt
+coppertop.egg-info/top_level.txt
+MANIFEST
