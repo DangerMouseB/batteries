@@ -18,9 +18,10 @@
 
 
 
-from ..testing import AssertEqual
-from ..ranges import IndexableFR, ListOR, ChainAsSingleRange
+from ..testing import AssertEqual, AssertRaises
+from ..ranges import IndexableFR, ListOR, ChainAsSingleRange, RMap, Materialise
 from ..range_interfaces import GetIRIter
+
 
 
 def test_listRanges():
@@ -39,10 +40,15 @@ def test_rangeOrRanges():
     rOfR = (IndexableFR([1]), IndexableFR([2])) >> ChainAsSingleRange
     [e for e in rOfR >> GetIRIter] >> AssertEqual >> [1,2]
 
+def test_other():
+    with AssertRaises(TypeError):
+        [1, 2, 3] >> RMap(lambda x: x) >> Materialise >> AssertEqual >> [1, 2, 3]
+    [1, 2, 3] >> RMap >> (lambda x: x) >> Materialise >> AssertEqual >> [1, 2, 3]
 
 def main():
     test_listRanges()
     test_rangeOrRanges()
+    test_other()
     print('pass')
 
 

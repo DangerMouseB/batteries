@@ -27,9 +27,9 @@
 
 
 from __future__ import annotations
-import sys
+import sys, types
 
-from coppertop import Pipeable
+from coppertop import Pipeable, PipeableFunction
 from ._core import Null
 from .range_interfaces import IForwardRange, IOutputRange, IInputRange, IRandomAccessInfinite
 
@@ -246,9 +246,11 @@ class _MaterialisedRange(list):
 # RMap rather than Map to make explicit that it is unrelated to python's map
 @Pipeable
 class RMap(IForwardRange):
-    def __init__(self, r, f):
+    def __init__(self, r, fn):
         self.r = r >> ToIRangeIfNot
-        self.f = f
+        if type(fn) != types.FunctionType and type(fn) != PipeableFunction:
+            raise TypeError("RMAP.__init__ fn should be a function but got a %s" % type(fn))
+        self.f = fn
     @property
     def empty(self):
         return self.r.empty
