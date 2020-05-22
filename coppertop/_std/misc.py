@@ -50,6 +50,13 @@ def Not(x):
 def GetAttr(x, name):
     return getattr(x, name)
 
+@Pipeable
+def Max(x):
+    return max(x)
+
+@Pipeable
+def Min(x):
+    return min(x)
 
 
 

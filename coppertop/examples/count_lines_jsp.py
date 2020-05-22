@@ -18,8 +18,8 @@
 
 
 # see - https://en.wikipedia.org/wiki/Jackson_structured_programming
-# this file show four ways of implementing the line counting problem - two are
-# translations from the wikipedia article and the remaining two take the "traditional"
+# this file show four ways to implement the problem of counting repeated lines in a file
+# - two are translations from the wikipedia article and the remaining two take the "traditional"
 # program and transform it into range style code - given that CountEquals exhausts
 # the range r I'm not sure how one can claim it is functional.
 

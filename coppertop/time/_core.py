@@ -41,7 +41,7 @@
 #
 # Our initial focus here is a good interface and possibly later reimplementation in a fast systems language.
 
-
+# https://docs.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings
 # FORMATTING CODES
 # yyyy - four digit year
 # yy - double digit year

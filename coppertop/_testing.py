@@ -26,16 +26,12 @@ import sys, traceback, contextlib
 def HookStdOutErrToLines():
     oldout, olderr = sys.stdout, sys.stderr
     try:
-        # out = [StringIO(), StringIO()]
-        out = [StreamToLines(), StreamToLines()]
-        sys.stdout, sys.stderr = out
-        yield out
+        sys.stdout = StreamToLines()
+        sys.stderr = StreamToLines()
+        yield [sys.stdout.lines, sys.stderr.lines]
     finally:
         sys.stdout, sys.stderr = oldout, olderr
-        # out[0] = out[0].getvalue()
-        # out[1] = out[1].getvalue()
-        out[0] = out[0].lines
-        out[1] = out[1].lines
+
 
 class StreamToLines(object):
     def __init__(self):
@@ -70,6 +66,6 @@ class AssertRaises(object):
         if exceptionType is None: raise AssertionError("No exception raised, %s expected." % self.expectedExceptionType)        # no error was raised
         if issubclass(exceptionType, self.expectedExceptionType):
             return True               # the correct error was raised
-        traceback.print_tb(tb)
+        # traceback.print_tb(tb)    Don't think this makes much sense
         raise AssertionError("%s raised. %s expected." % (exceptionType, self.expectedExceptionType) )
 

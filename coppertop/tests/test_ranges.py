@@ -19,7 +19,8 @@
 
 
 from ..testing import AssertEqual
-from ..ranges import IndexableFR, ListOR, ChainAsSingleRange, GetIRIter
+from ..ranges import IndexableFR, ListOR, ChainAsSingleRange
+from ..range_interfaces import GetIRIter
 
 
 def test_listRanges():

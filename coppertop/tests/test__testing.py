@@ -18,13 +18,12 @@
 
 
 
-from .._testing import StdoutHooker, AssertRaises
+from .._testing import HookStdOutErrToLines, AssertRaises
 
 
 def testStdoutHooker():
-    lines = []
-    h = StdoutHooker(lines)
-    with h:
+    with HookStdOutErrToLines() as outerr:
+        lines = outerr[0]
         print("hello")
         assert len(lines) == 1, lines
         assert lines[0] == "hello", lines
@@ -33,7 +32,7 @@ def testStdoutHooker():
         print()
         assert len(lines) == 6, lines
         assert lines[2] == "there is ", lines
-        assert lines[3] == "another line", lines
+        assert lines[3] == " another line", lines
         assert lines[4] == "again", lines
         assert lines[5] == "", lines
 

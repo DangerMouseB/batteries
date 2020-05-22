@@ -55,6 +55,13 @@ except:
     pass
 
 try:
+    from . import range_interfaces
+    from .range_interfaces import *
+    _all.update(_getPublicMembersOnly(range_interfaces))
+except:
+    pass
+
+try:
     from . import ranges
     from .ranges import *
     _all.update(_getPublicMembersOnly(ranges))

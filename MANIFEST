@@ -29,3 +29,8 @@ coppertop/tests/test__testing.py
 coppertop/tests/test_pipeable.py
 coppertop/tests/test_ranges.py
 coppertop/tests/test_std.py
+coppertop/time/__init__.py
+coppertop/time/_core.py
+coppertop/time/_enums.py
+coppertop/time/tests/__init__.py
+coppertop/time/tests/test_time.py
