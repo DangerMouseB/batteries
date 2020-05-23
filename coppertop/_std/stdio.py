@@ -1,6 +1,6 @@
 #*******************************************************************************
 #
-#    Copyright (c) 2017-2020 David Briant
+#    Copyright (c) 2020 David Briant
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -17,14 +17,17 @@
 #*******************************************************************************
 
 
-from .iter_utils import *
-from .datetime_utils import *
-from .list_utils import *
-from .math_utils import *
-from .misc import *
-from .module_utils import *
-from .pipe_utils import *
-from .range_utils import *
-from .repl_utils import *
-from .stdio import *
-from .string_utils import *
+import sys
+
+class OStreamWrapper(object):
+    def __init__(self, sGetter):
+        self._sGetter = sGetter
+    def __lshift__(self, other):
+        # self << other
+        self._sGetter().write(other)      # done as a function call so it plays nicely with HookStdOutErrToLines
+        return self
+
+
+cout = OStreamWrapper(lambda : sys.stdout)
+cerr = OStreamWrapper(lambda : sys.stderr)
+

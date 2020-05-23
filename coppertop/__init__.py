@@ -20,11 +20,19 @@ _all = set(['Missing', 'Null'])
 
 import inspect
 
+
+
+
 def _getPublicMembersOnly(module):
+    def _isInOrIsChildOf(name, names):
+        for parentName in names:
+            if name[0:len(parentName)] == parentName:
+                return True
+        return False
     names = ['coppertop.pipeable', module.__name__]
-    members = [(name, o) for (name, o) in inspect.getmembers(module) if (name[0:1] != '_')]
-    members = [(name, o) for (name, o) in members if not (inspect.isbuiltin(o) or inspect.ismodule(o))]
-    members = [(name, o) for (name, o) in members if (o.__module__ in names)]
+    members = [(name, o) for (name, o) in inspect.getmembers(module) if (name[0:1] != '_')]         # remove private
+    members = [(name, o) for (name, o) in members if not (inspect.isbuiltin(o) or inspect.ismodule(o))]   # remove built-ins and modules
+    members = [(name, o) for (name, o) in members if _isInOrIsChildOf(o.__module__, names)]   # keep all pipeables and children
     return [name for (name, o) in members]
 
 
@@ -53,6 +61,13 @@ try:
     _all.update(_getPublicMembersOnly(_std))
 except:
     pass
+
+# try:
+#     from ._std import stdio
+#     from coppertop._std.stdio import *
+#     _all.update(_getPublicMembersOnly(stdio))
+# except:
+#     pass
 
 try:
     from . import range_interfaces
