@@ -1,4 +1,4 @@
-#*******************************************************************************
+# *******************************************************************************
 #
 #    Copyright (c) 2011-2020 David Briant
 #
@@ -14,14 +14,19 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 #
-#*******************************************************************************
+# *******************************************************************************
 
-_all = set(['Missing', 'Null'])
+
+_all = set(['Missing', 'Null', 'getMyPublicMembers', 'getPublicMembersOf'])
 
 import inspect
 
 
+def getMyPublicMembers(moduleName, globals, locals):
+    pass
 
+def getPublicMembersOf(module):
+    pass
 
 def _getPublicMembersOnly(module):
     def _isInOrIsChildOf(name, names):

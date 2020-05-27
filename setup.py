@@ -18,7 +18,7 @@ setup(
     'coppertop.time.tests',
   ],
   python_requires='>=3.6',
-  version = 'v0.1.13',
+  version = 'v0.1.14',
   license='Apache 2.0',
   description = 'Some batteries Python didn\'t come with - a pipe operator, d language style ranges, and more',
   long_description_content_type='text/markdown',
@@ -29,6 +29,7 @@ setup(
   download_url = 'https://github.com/DangerMouseB/coppertop/archive/v0.1.7.tar.gz',
   keywords = ['piping', 'pipeline', 'pipe', 'functional', 'ranges'],
   install_requires=[],
+  include_package_data=True,
   classifiers=[
     'Development Status :: 4 - Beta',      # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
     'Intended Audience :: Developers',
@@ -36,6 +37,7 @@ setup(
     'Intended Audience :: Science/Research',
     'Topic :: Utilities',
     'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
   ],

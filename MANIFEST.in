@@ -1,0 +1,3 @@
+include NOTICE
+include LICENSE
+include coppertop/examples/tests/linesForCounting.txt
